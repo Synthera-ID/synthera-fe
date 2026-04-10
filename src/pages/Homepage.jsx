@@ -1,19 +1,33 @@
-import Button from "@/components/atoms/Button";
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-export default function Homepage() {
+export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#050505] selection:bg-blue-500/30 selection:text-blue-200">
-      <main className="text-center py-6">
-        <h6 className="text-white">Test Component</h6>
-        <Button />
-      </main>
-
-      {/* Footer Sederhana (Opsional sebelum Anda buat filenya) */}
-      <footer className="py-12 border-t border-white/5 bg-[#050505] text-center">
-        <p className="text-gray-500 text-sm italic">
-          Synthera ID &copy; {new Date().getFullYear()}. All rights reserved.
-        </p>
-      </footer>
-    </div>
+    <header className={`header ${scrolled ? 'scrolled' : 'py-6'}`}>
+      <div className="container flex items-center justify-between px-6 mx-auto">
+        <div className="flex items-center gap-2 cursor-pointer">
+          <img src="/icon.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <span className="text-xl font-bold tracking-tight text-white">Synthera</span>
+        </div>
+        <nav className="hidden md:flex items-center gap-8">
+          <a href="#features" className="btn-ghost">Features</a>
+          <a href="#pricing" className="btn-ghost">Pricing</a>
+          <a href="#faq" className="btn-ghost">FAQ</a>
+        </nav>
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white">Login</Link>
+          <Link href="/register" className="btn-primary">Register</Link>
+        </div>
+      </div>
+    </header>
   );
 }
