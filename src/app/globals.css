@@ -1,5 +1,7 @@
 @import "tailwindcss";
-
+*,html {
+  scroll-behavior: smooth;
+}
 @theme {
   /* --- TYPOGRAPHY (Sesuai gambar referensi kamu) --- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui;

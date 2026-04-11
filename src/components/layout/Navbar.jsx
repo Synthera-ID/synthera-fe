@@ -1,8 +1,8 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Sun, Moon } from 'lucide-react';
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Sun, Moon } from "lucide-react";
 
 export default function Navbar() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -11,7 +11,7 @@ export default function Navbar() {
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('light');
+    document.documentElement.classList.toggle("light");
   };
 
   useEffect(() => {
@@ -32,36 +32,26 @@ export default function Navbar() {
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-[100] py-5 transition-transform duration-300 ${
-        isVisible ? 'translate-y-0' : '-translate-y-full'
+      className={`fixed top-0 left-0 w-full z-[100] bg-transparent py-5 transition-transform duration-300 ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
-      style={{ background: 'transparent' }}
     >
       <div className="max-w-[1440px] mx-auto px-10 md:px-20 flex items-center justify-between">
-        
         {/* --- LOGO (Kiri) --- */}
         <Link href="/" className="flex items-center gap-2.5">
-          <Image
-            src="/icon.png"
-            alt="Synthera Logo"
-            width={28}
-            height={28}
-            className="rounded-full"
-          />
-          <span className="text-[15px] font-bold tracking-tight text-white">
-            Synthera
-          </span>
+          <Image src="/icon.png" alt="Synthera Logo" width={48} height={48} className="rounded-full" />
+
+          <span className="text-xl font-bold tracking-tight text-white">Synthera</span>
         </Link>
 
         {/* --- GRUP KANAN (Toggle + Menu + Login) --- */}
         <div className="flex items-center gap-6">
-
           {/* 1. Toggle Tema */}
           <button
             onClick={toggleTheme}
@@ -72,10 +62,18 @@ export default function Navbar() {
 
           {/* 2. Menu Navigasi */}
           <div className="flex items-center gap-7 text-[13px] font-medium text-gray-400">
-            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-            <Link href="#pricing"  className="hover:text-white transition-colors">Pricing</Link>
-            <Link href="#faq"      className="hover:text-white transition-colors">FAQ</Link>
-            <Link href="/register" className="hover:text-white transition-colors">Register</Link>
+            <Link href="#features" className="hover:text-white transition-colors">
+              Features
+            </Link>
+            <Link href="#pricing" className="hover:text-white transition-colors">
+              Pricing
+            </Link>
+            <Link href="#faq" className="hover:text-white transition-colors">
+              FAQ
+            </Link>
+            <Link href="/register" className="hover:text-white transition-colors">
+              Register
+            </Link>
           </div>
 
           {/* 3. Tombol Login */}
@@ -85,7 +83,6 @@ export default function Navbar() {
           >
             Login
           </Link>
-
         </div>
       </div>
     </nav>
