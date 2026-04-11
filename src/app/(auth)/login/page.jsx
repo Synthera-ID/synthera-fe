@@ -17,7 +17,6 @@ export default function Login({ searchParams }) {
   const RedirectGoogle = () => {
     setButtonGoogleState(true);
     window.location.href = "https://api.synthera.id/v1/api/oauth/google";
-    setButtonGoogleState(false);
     return;
   };
 
@@ -28,16 +27,19 @@ export default function Login({ searchParams }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error("Unauthorized");
+
           return res.json();
         })
         .then((user) => {
           console.log("User:", user);
 
-          // ✅ login sukses → redirect dashboard
+          // ✅ login sukses → redirect
+          setButtonGoogleState(false);
           router.push("/dashboard");
         })
         .catch(() => {
           // ❌ gagal → tetap di login
+          setButtonGoogleState(false);
           router.push("/login?error=unauthorized");
         });
     }
@@ -134,7 +136,7 @@ export default function Login({ searchParams }) {
             className="disabled:cursor-progress cursor-pointer w-full py-2.5 text-[13px] rounded-lg border-white/10 flex items-center justify-center gap-2.5"
           >
             <FcGoogle size={15} />
-            {ButtonGoogleState ? "Processing" : "Continue with Google"}
+            {ButtonGoogleState ? "Redirecting..." : "Continue with Google"}
           </Button>
           <Button
             type="button"
