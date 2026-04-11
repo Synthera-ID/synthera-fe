@@ -6,13 +6,13 @@ import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function Login() {
+export default function Login({ searchParams }) {
   const [ButtonGoogleState, setButtonGoogleState] = useState(false);
   const router = useRouter();
-  const params = useSearchParams();
+  const params = use(searchParams);
 
   const RedirectGoogle = () => {
     setButtonGoogleState(true);
@@ -22,9 +22,7 @@ export default function Login() {
   };
 
   useEffect(() => {
-    const status = params.get("status");
-
-    if (status === "success") {
+    if (params.status === "success") {
       fetch("https://api.synthera.id/api/user", {
         credentials: "include",
       })
