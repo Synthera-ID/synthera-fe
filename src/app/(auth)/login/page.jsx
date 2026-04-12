@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 
 export default function Login({ searchParams }) {
   const [ButtonGoogleState, setButtonGoogleState] = useState(false);
+  const [LoginState, setLoginState] = useState(null);
   const router = useRouter();
   const params = use(searchParams);
 
@@ -21,29 +22,58 @@ export default function Login({ searchParams }) {
   };
 
   useEffect(() => {
-    if (params.status === "success") {
-      fetch("https://api.synthera.id/api/user", {
-        credentials: "include",
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Unauthorized");
+    const token = params.token;
+    const status = params.status;
 
-          return res.json();
-        })
-        .then((user) => {
-          console.log("User:", user);
-
-          // ✅ login sukses → redirect
-          setButtonGoogleState(false);
-          router.push("/dashboard");
-        })
-        .catch(() => {
-          // ❌ gagal → tetap di login
-          setButtonGoogleState(false);
-          router.push("/login?error=unauthorized");
-        });
+    if (!token || status !== "success") {
+      if (status == "failed") {
+        setLoginState({ title: "Authentication Failed.", status: 500 });
+      }
+      setTimeout(() => {
+        setLoginState(null);
+        router.replace("/login");
+      }, 1000);
+      return;
     }
+
+    setLoginState({ message: "Verifying your credentials...", title: "Initializing", loading: true });
+
+    fetch("https://api.synthera.id/api/auth/verify", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ token }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) => {
+        setLoginState({
+          title: "Authentication Successful.",
+          message: "Redirecting to Dashboard...",
+          status: 200,
+          loading: false,
+        });
+        const timeout = setTimeout(() => {
+          router.replace("/dashboard");
+        }, 1500);
+
+        return () => clearTimeout(timeout);
+      })
+      .catch(() => {
+        setLoginState({ title: "Authentication Failed.", status: 500, loading: false });
+        const timeout = setTimeout(() => {
+          router.replace("/login");
+        }, 500);
+
+        return () => clearTimeout(timeout);
+      });
   }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden font-sans bg-bg-1">
       {/* ── Background Pattern dari Design System ── */}
@@ -78,83 +108,114 @@ export default function Login({ searchParams }) {
       />
       <style>{`@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }`}</style>
 
-      {/* Card Login */}
-      <div
-        className="w-full max-w-[380px] rounded-2xl p-8 z-10 relative"
-        style={{
-          background: "rgba(24, 20, 43, 0.88)",
-          border: "1px solid rgba(139,92,246,0.2)",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
-          backdropFilter: "blur(20px)",
-        }}
-      >
-        {/* Header */}
-        <div className="text-center mb-7">
-          <div className="flex items-center justify-center gap-2 mb-5">
-            <Image src="/icon.png" alt="Synthera Logo" width={24} height={24} className="rounded-full" />
-            <span className="text-white font-semibold text-[15px]">Synthera</span>
+      {LoginState && (
+        <div
+          className="w-full max-w-[380px] rounded-2xl p-8 z-10 relative"
+          style={{
+            background: "rgba(24, 20, 43, 0.88)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <div className="flex flex-col items-center gap-5 animate-pulse">
+            {LoginState?.loading && (
+              <div className="w-16 h-16 rounded-full border-6 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+            )}
+            <div className="text-center">
+              <h2
+                className={`text-xl font-semibold  mb-1
+                   ${LoginState?.status !== 500 && LoginState?.status !== 200 && "text-white"}
+                  ${LoginState?.status === 500 && "text-red-400"} 
+                  ${LoginState?.status === 200 && "text-green-400"}`}
+              >
+                {LoginState?.title}
+              </h2>
+              <p className={`text-sm`}>{LoginState?.message}</p>
+            </div>
           </div>
-          <h2 className="text-[22px] font-bold mb-1.5 text-white">Welcome Back</h2>
-          <p className="text-[#94A3B8] text-[13px] font-normal">Sign in to your account</p>
         </div>
+      )}
+      {/* Card Login */}
+      {!LoginState && (
+        <div
+          className="w-full max-w-[380px] rounded-2xl p-8 z-10 relative"
+          style={{
+            background: "rgba(24, 20, 43, 0.88)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          {/* Header */}
+          <div className="text-center mb-7">
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <Image src="/icon.png" alt="Synthera Logo" width={24} height={24} className="rounded-full" />
+              <span className="text-white font-semibold text-[15px]">Synthera</span>
+            </div>
+            <h2 className="text-[22px] font-bold mb-1.5 text-white">Welcome Back</h2>
+            <p className="text-[#94A3B8] text-[13px] font-normal">Sign in to your account</p>
+          </div>
 
-        {/* Form */}
-        <form className="flex flex-col gap-3" onSubmit={(e) => e.preventDefault()}>
-          <Input icon={<FiMail size={14} />} type="email" placeholder="Email" required />
-          <Input icon={<FiLock size={14} />} type="password" placeholder="Password" required />
+          {/* Form */}
+          <form className="flex flex-col gap-3" onSubmit={(e) => e.preventDefault()}>
+            <Input icon={<FiMail size={14} />} type="email" placeholder="Email" required />
+            <Input icon={<FiLock size={14} />} type="password" placeholder="Password" required />
 
-          {/* Remember & Forgot */}
-          <div className="flex justify-between items-center text-[12px]">
-            <label className="flex items-center gap-2 text-[#94A3B8] cursor-pointer">
-              <input type="checkbox" className="accent-violet-500 w-3.5 h-3.5 rounded" />
-              <span>Remember me</span>
-            </label>
-            {/* <Link href="/forgot-password" className="text-[#94A3B8] hover:text-violet-400 transition-colors">
+            {/* Remember & Forgot */}
+            <div className="flex justify-between items-center text-[12px]">
+              <label className="flex items-center gap-2 text-[#94A3B8] cursor-pointer">
+                <input type="checkbox" className="accent-violet-500 w-3.5 h-3.5 rounded" />
+                <span>Remember me</span>
+              </label>
+              {/* <Link href="/forgot-password" className="text-[#94A3B8] hover:text-violet-400 transition-colors">
               Forgot password?
             </Link> */}
+            </div>
+
+            <Button type="submit" variant="primary" className="w-full mt-1 py-2.5 text-[13px] rounded-lg">
+              Sign In
+            </Button>
+          </form>
+
+          {/* Divider OR */}
+          <div className="flex items-center text-center my-5 text-[11px] text-[#6B7280]">
+            <span className="flex-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}></span>
+            <span className="px-3">Or</span>
+            <span className="flex-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}></span>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full mt-1 py-2.5 text-[13px] rounded-lg">
-            Sign In
-          </Button>
-        </form>
+          {/* Social Logins */}
+          <div className="flex flex-col gap-2.5">
+            <Button
+              onClick={RedirectGoogle}
+              type="button"
+              variant="glass"
+              disabled={ButtonGoogleState}
+              className="disabled:cursor-progress cursor-pointer w-full py-2.5 text-[13px] rounded-lg border-white/10 flex items-center justify-center gap-2.5"
+            >
+              <FcGoogle size={15} />
+              {ButtonGoogleState ? "Redirecting..." : "Continue with Google"}
+            </Button>
+            <Button
+              type="button"
+              variant="glass"
+              className="cursor-pointer w-full py-2.5 text-[13px] rounded-lg border-white/10 flex items-center justify-center gap-2.5"
+            >
+              <FaGithub size={15} /> Continue with GitHub
+            </Button>
+          </div>
 
-        {/* Divider OR */}
-        <div className="flex items-center text-center my-5 text-[11px] text-[#6B7280]">
-          <span className="flex-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}></span>
-          <span className="px-3">Or</span>
-          <span className="flex-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}></span>
+          {/* Register Link */}
+          <p className="text-center mt-5 text-[12px] text-[#94A3B8]">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-violet-400 hover:text-violet-300 transition-colors">
+              Register
+            </Link>
+          </p>
         </div>
-
-        {/* Social Logins */}
-        <div className="flex flex-col gap-2.5">
-          <Button
-            onClick={RedirectGoogle}
-            type="button"
-            variant="glass"
-            disabled={ButtonGoogleState}
-            className="disabled:cursor-progress cursor-pointer w-full py-2.5 text-[13px] rounded-lg border-white/10 flex items-center justify-center gap-2.5"
-          >
-            <FcGoogle size={15} />
-            {ButtonGoogleState ? "Redirecting..." : "Continue with Google"}
-          </Button>
-          <Button
-            type="button"
-            variant="glass"
-            className="cursor-pointer w-full py-2.5 text-[13px] rounded-lg border-white/10 flex items-center justify-center gap-2.5"
-          >
-            <FaGithub size={15} /> Continue with GitHub
-          </Button>
-        </div>
-
-        {/* Register Link */}
-        <p className="text-center mt-5 text-[12px] text-[#94A3B8]">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-violet-400 hover:text-violet-300 transition-colors">
-            Register
-          </Link>
-        </p>
-      </div>
+      )}
+      {/*  */}
     </div>
   );
 }
