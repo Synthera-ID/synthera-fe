@@ -47,30 +47,34 @@ export default function Login({ searchParams }) {
       },
       body: JSON.stringify({ token }),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        return data;
       })
       .then((data) => {
         setLoginState({
-          title: "Authentication Successful.",
+          title: data.message,
           message: "Redirecting to Dashboard...",
           status: 200,
           loading: false,
         });
-        const timeout = setTimeout(() => {
+        setTimeout(() => {
+          setLoginState(null);
           router.replace("/dashboard");
-        }, 1500);
-
-        return () => clearTimeout(timeout);
+        }, 1000);
       })
-      .catch(() => {
-        setLoginState({ title: "Authentication Failed.", status: 500, loading: false });
-        const timeout = setTimeout(() => {
+      .catch((err) => {
+        setLoginState({
+          title: "Authentication Failed.",
+          message: err.message || "Something went wrong.",
+          status: 500,
+          loading: false,
+        });
+        setTimeout(() => {
+          setLoginState(null);
           router.replace("/login");
-        }, 500);
-
-        return () => clearTimeout(timeout);
+        }, 1000);
       });
   }, []);
 
