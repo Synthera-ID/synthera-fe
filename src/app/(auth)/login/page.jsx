@@ -40,7 +40,6 @@ export default function Login({ searchParams }) {
 
     fetch("https://api.synthera.id/api/auth/verify", {
       method: "POST",
-      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
