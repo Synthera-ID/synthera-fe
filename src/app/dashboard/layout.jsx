@@ -3,5 +3,5 @@
 import ProtectedRoute from "@/components/organisms/ProtectedRoutes";
 
 export default function LayoutDashboardPage({ children }) {
-  return { children };
+  return <>{children};</>;
 }
