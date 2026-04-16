@@ -37,7 +37,12 @@ export default function Login({ searchParams }) {
     }
 
     setLoginState({ message: "Verifying your credentials...", title: "Initializing", loading: true });
-
+    fetch("https://api.synthera.id/api/debug-auth", {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then((r) => r.json())
+      .then("TEST", console.log);
     fetch("https://api.synthera.id/api/auth/verify", {
       method: "POST",
       headers: {
