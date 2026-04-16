@@ -2,8 +2,7 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+import { apiFetch } from "./apiFetch";
 
 const AuthContext = createContext(null);
 
@@ -19,12 +18,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch(`${API_BASE}/user`, {
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
-      });
+      const res = await apiFetch(`/user`);
 
       if (res.ok) {
         const data = await res.json();

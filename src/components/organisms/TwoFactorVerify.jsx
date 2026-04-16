@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/hooks/apiFetch";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 const CODE_LENGTH = 6;
 
 export default function TwoFactorVerify() {
@@ -82,14 +82,9 @@ export default function TwoFactorVerify() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/2fa/verify`, {
+      const res = await apiFetch(`/2fa/verify`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code: verifyCode }),
+        body: { code: verifyCode },
       });
 
       if (!res.ok) {

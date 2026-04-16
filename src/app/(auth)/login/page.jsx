@@ -8,6 +8,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/hooks/apiFetch";
 
 export default function Login({ searchParams }) {
   const [ButtonGoogleState, setButtonGoogleState] = useState(false);
@@ -37,19 +38,10 @@ export default function Login({ searchParams }) {
     }
 
     setLoginState({ message: "Verifying your credentials...", title: "Initializing", loading: true });
-    fetch("https://api.synthera.id/api/debug-auth", {
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    })
-      .then((r) => r.json())
-      .then("TEST", console.log);
-    fetch("https://api.synthera.id/api/auth/verify", {
+
+    apiFetch("/auth/verify", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ token }),
+      body: { token },
     })
       .then(async (res) => {
         const data = await res.json();

@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading, twoFactorRequired } = useAuth();
+  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   if (twoFactorRequired) {
     router.replace("/2fa");
   }

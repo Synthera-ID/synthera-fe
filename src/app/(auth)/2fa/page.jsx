@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TwoFactorQRScan from "@/components/organisms/TwoFactorQRScan";
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api";
+import { apiFetch } from "@/hooks/apiFetch";
 
 export default function TwoFactorPrompt() {
   const router = useRouter();
@@ -17,14 +17,8 @@ export default function TwoFactorPrompt() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/2fa/enable`, {
+      const res = await apiFetch(`/2fa/enable`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
       });
 
       if (!res.ok) {
