@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardSidebar from "@/app/dashboard/DashboardSidebar";
-import {
-  Box,
-  Zap,
-  Grid,
-  Clock,
-  CreditCard,
-  Key,
-  Settings,
-} from "lucide-react";
+import { Box, Zap, Grid, Clock, CreditCard, Key, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user, loading, twoFactorRequired } = useAuth();
+  if (twoFactorRequired) {
+    router.replace("/2fa");
+  }
+  console.log("User : ", user);
   return (
     <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
       <DashboardSidebar />
@@ -97,9 +96,7 @@ function StatCard({ icon, label, value, subLabel, subLabelColor, iconBgClass }) 
   return (
     <div className="bg-bg-2 border border-bg-3 rounded-[20px] p-6 flex flex-col justify-between relative group hover:border-bg-3 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 min-h-[140px]">
       <div className="flex items-center gap-4 mb-3">
-        <div className={`w-[46px] h-[46px] flex items-center justify-center rounded-xl ${iconBgClass}`}>
-          {icon}
-        </div>
+        <div className={`w-[46px] h-[46px] flex items-center justify-center rounded-xl ${iconBgClass}`}>{icon}</div>
         <div className="text-[14px] text-text-2 font-medium">{label}</div>
       </div>
       <div>
@@ -113,8 +110,13 @@ function StatCard({ icon, label, value, subLabel, subLabelColor, iconBgClass }) 
 function Bar({ day, height, delay }) {
   return (
     <div className="flex flex-col items-center flex-1 group h-full justify-end px-1.5 basis-0">
-      <div className="relative w-full flex items-end justify-center rounded-t-[4px] overflow-visible" style={{ height }}>
-        <span className="absolute -top-7 text-[11px] text-text-3 font-semibold capitalize pointer-events-none">{day}</span>
+      <div
+        className="relative w-full flex items-end justify-center rounded-t-[4px] overflow-visible"
+        style={{ height }}
+      >
+        <span className="absolute -top-7 text-[11px] text-text-3 font-semibold capitalize pointer-events-none">
+          {day}
+        </span>
         <div
           className="w-full h-full bg-gradient-to-t from-primary-2 to-primary-3 rounded-t-[4px] transition-all duration-700 ease-in-out group-hover:from-primary-1 group-hover:to-primary-4 group-hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]"
           style={{ animationDelay: delay }}
