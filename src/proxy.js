@@ -73,6 +73,7 @@ export async function proxy(request) {
     if (res.ok) {
       user = await res.json();
 
+      console.log("User data from API:", user); // Debug: cek data user yang diterima
       // Cek 2FA: enabled di DB tapi belum verify di session ini
       twoFactorRequired = user.two_factor_enabled && !user.two_factor_verified;
     }
@@ -81,6 +82,7 @@ export async function proxy(request) {
     user = null;
   }
 
+  console.log("Auth check:", { pathname, user, twoFactorRequired }); // Debug: cek hasil auth check
   const isAuthenticated = !!user;
 
   // ── GUEST ROUTES: sudah login → redirect dashboard ──
