@@ -59,7 +59,10 @@ export async function proxy(request) {
     // Forward semua cookies dari browser ke Laravel
     const cookieHeader = request.headers.get("cookie") || "";
     const xsrfToken = getXsrfToken(cookieHeader);
-
+    console.log("=== MIDDLEWARE DEBUG ===");
+    console.log("Cookies:", cookieHeader);
+    console.log("API_BASE:", API_BASE);
+    console.log("Referer:", request.nextUrl.origin);
     const res = await fetch(`${API_BASE}/user`, {
       method: "GET",
       headers: {
@@ -70,7 +73,6 @@ export async function proxy(request) {
       },
     });
 
-    console.log("Auth API response status:", res); // Debug: cek status response auth API
     if (res.ok) {
       user = await res.json();
 
@@ -83,7 +85,6 @@ export async function proxy(request) {
     user = null;
   }
 
-  console.log("Auth check:", { pathname, user, twoFactorRequired }); // Debug: cek hasil auth check
   const isAuthenticated = !!user;
 
   // ── GUEST ROUTES: sudah login → redirect dashboard ──
