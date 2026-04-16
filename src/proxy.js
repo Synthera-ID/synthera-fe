@@ -70,6 +70,7 @@ export async function proxy(request) {
       },
     });
 
+    console.log("Auth API response status:", res); // Debug: cek status response auth API
     if (res.ok) {
       user = await res.json();
 
