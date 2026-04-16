@@ -60,7 +60,7 @@ export default function Login({ searchParams }) {
         });
         setTimeout(() => {
           setLoginState(null);
-          router.replace("/");
+          router.replace("/2fa");
         }, 1000);
       })
       .catch((err) => {

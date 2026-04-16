@@ -33,14 +33,18 @@ const publicRoutes = ["/", "/privacy-policy", "/terms-of-services"];
 function matchRoute(pathname, routes) {
   return routes.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
+/**
+ * Extract XSRF-TOKEN dari cookie string & decode
+ */
+function getXsrfToken(cookieHeader) {
+  const match = cookieHeader.match(/XSRF-TOKEN=([^;]+)/);
+  if (!match) return "";
+  // Laravel encode XSRF token, perlu decode
+  return decodeURIComponent(match[1]);
+}
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
-
-  // Skip static files & api routes
-  if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".")) {
-    return NextResponse.next();
-  }
 
   // Public routes → langsung lewat
   if (matchRoute(pathname, publicRoutes)) {
@@ -54,24 +58,26 @@ export async function proxy(request) {
   try {
     // Forward semua cookies dari browser ke Laravel
     const cookieHeader = request.headers.get("cookie") || "";
+    const xsrfToken = getXsrfToken(cookieHeader);
 
     const res = await fetch(`${API_BASE}/user`, {
-      credentials: "include",
+      method: "GET",
       headers: {
         Accept: "application/json",
         Cookie: cookieHeader,
         Referer: request.nextUrl.origin,
+        ...(xsrfToken && { "X-XSRF-TOKEN": xsrfToken }),
       },
     });
 
     if (res.ok) {
       user = await res.json();
 
-      // Cek 2FA: aktif tapi belum verify di session ini
+      // Cek 2FA: enabled di DB tapi belum verify di session ini
       twoFactorRequired = user.two_factor_enabled && !user.two_factor_verified;
     }
   } catch {
-    // Laravel down / network error 
+    // Laravel down / network error → anggap belum login
     user = null;
   }
 
