@@ -1,95 +1,139 @@
-import { NextResponse } from "next/server";
+// import { NextResponse } from "next/server";
 
-/**
- * Routes yang HARUS login + 2FA verified
- */
-const protectedRoutes = [
-  "/dashboard",
-  "/subscriptions",
-  "/profile",
-  "/payment_history",
-  "/digital_content",
-  "/api_usage",
-  "/api_keys",
-];
+// const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 
-/**
- * Routes khusus 2FA (harus login, tapi belum perlu verify 2FA)
- */
-const twoFactorRoutes = ["/2fa"];
+// /**
+//  * Routes yang HARUS login + 2FA verified
+//  */
+// const protectedRoutes = [
+//   "/dashboard",
+//   "/subscriptions",
+//   "/profile",
+//   "/payment_history",
+//   "digital_content",
+//   "api_usage",
+//   "/api_keys",
+// ];
 
-/**
- * Routes untuk guest only (sudah login → redirect dashboard)
- */
-const guestRoutes = ["/login", "/register"];
+// /**
+//  * Routes khusus 2FA (harus login, tapi belum perlu verify 2FA)
+//  */
+// const twoFactorRoutes = ["/2fa"];
 
-/**
- * Routes publik (tidak perlu auth sama sekali)
- */
-const publicRoutes = ["/", "/privacy-policy", "/terms-of-services"];
+// /**
+//  * Routes untuk guest only (sudah login → redirect dashboard)
+//  */
+// const guestRoutes = ["/login", "/register"];
 
-/**
- * Nama session cookie Laravel (cek config/session.php → 'cookie')
- * Default Laravel: APP_NAME_session (lowercase, spasi jadi underscore)
- * Contoh: jika APP_NAME=Synthera → synthera_session
- */
-const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "api-synthera-session";
+// /**
+//  * Routes publik (tidak perlu auth sama sekali)
+//  */
+// const publicRoutes = ["/", "/privacy-policy", "/terms-of-services"];
 
-function matchRoute(pathname, routes) {
-  return routes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
-  );
-}
+// function matchRoute(pathname, routes) {
+//   return routes.some((route) => pathname === route || pathname.startsWith(route + "/"));
+// }
+// /**
+//  * Extract XSRF-TOKEN dari cookie string & decode
+//  */
+// function getXsrfToken(cookieHeader) {
+//   const match = cookieHeader.match(/XSRF-TOKEN=([^;]+)/);
+//   if (!match) return "";
+//   // Laravel encode XSRF token, perlu decode
+//   return decodeURIComponent(match[1]);
+// }
 
-/**
- * Cek apakah session cookie ada di request.
- * Ini BUKAN validasi session — hanya cek keberadaan cookie.
- * Validasi real dilakukan client-side oleh komponen/hook.
- */
-function hasSessionCookie(request) {
-  const cookie = request.cookies.get(SESSION_COOKIE_NAME);
-  return !!cookie?.value;
-}
+// export async function proxy(request) {
+//   const { pathname } = request.nextUrl;
 
-export async function proxy(request) {
-  const { pathname } = request.nextUrl;
+//   // Public routes → langsung lewat
+//   if (matchRoute(pathname, publicRoutes)) {
+//     return NextResponse.next();
+//   }
 
-  // Public routes → langsung lewat
-  if (matchRoute(pathname, publicRoutes)) {
-    return NextResponse.next();
-  }
+//   // ── Cek auth ke Laravel ──
+//   let user = null;
+//   let twoFactorRequired = false;
 
-  const hasSession = hasSessionCookie(request);
+//   try {
+//     // Forward semua cookies dari browser ke Laravel
+//     const cookieHeader = request.headers.get("cookie") || "";
+//     const xsrfToken = getXsrfToken(cookieHeader);
+//     console.log("=== MIDDLEWARE DEBUG ===");
+//     console.log("Cookies:", cookieHeader);
+//     console.log("API_BASE:", API_BASE);
+//     console.log("Referer:", request.nextUrl.origin);
+//     const res = await fetch(`${API_BASE}/user`, {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//         Cookie: cookieHeader,
+//         Referer: request.nextUrl.origin,
+//         ...(xsrfToken && { "X-XSRF-TOKEN": xsrfToken }),
+//       },
+//     });
 
-  // ── GUEST ROUTES: punya session → redirect dashboard ──
-  if (matchRoute(pathname, guestRoutes)) {
-    if (hasSession) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return NextResponse.next();
-  }
+//     if (res.ok) {
+//       user = await res.json();
 
-  // ── 2FA ROUTES: harus punya session ──
-  if (matchRoute(pathname, twoFactorRoutes)) {
-    if (!hasSession) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    return NextResponse.next();
-  }
+//       console.log("User data from API:", user); // Debug: cek data user yang diterima
+//       // Cek 2FA: enabled di DB tapi belum verify di session ini
+//       twoFactorRequired = user.two_factor_enabled && !user.two_factor_verified;
+//     }
+//   } catch {
+//     // Laravel down / network error → anggap belum login
+//     user = null;
+//   }
 
-  // ── PROTECTED ROUTES: harus punya session ──
-  if (matchRoute(pathname, protectedRoutes)) {
-    if (!hasSession) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    return NextResponse.next();
-  }
+//   const isAuthenticated = !!user;
 
-  return NextResponse.next();
-}
+//   // ── GUEST ROUTES: sudah login → redirect dashboard ──
+//   if (matchRoute(pathname, guestRoutes)) {
+//     if (isAuthenticated) {
+//       if (twoFactorRequired) {
+//         return NextResponse.redirect(new URL("/2fa", request.url));
+//       }
+//       return NextResponse.redirect(new URL("/dashboard", request.url));
+//     }
+//     return NextResponse.next();
+//   }
 
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
+//   // ── 2FA ROUTES: harus login ──
+//   if (matchRoute(pathname, twoFactorRoutes)) {
+//     if (!isAuthenticated) {
+//       return NextResponse.redirect(new URL("/login", request.url));
+//     }
+//     // Sudah verify 2FA → tidak perlu di halaman 2FA lagi
+//     if (!twoFactorRequired) {
+//       return NextResponse.redirect(new URL("/dashboard", request.url));
+//     }
+//     return NextResponse.next();
+//   }
+
+//   // ── PROTECTED ROUTES: harus login + 2FA verified ──
+//   if (matchRoute(pathname, protectedRoutes)) {
+//     if (!isAuthenticated) {
+//       const loginUrl = new URL("/login", request.url);
+//       loginUrl.searchParams.set("from", pathname);
+//       return NextResponse.redirect(loginUrl);
+//     }
+//     if (twoFactorRequired) {
+//       return NextResponse.redirect(new URL("/2fa", request.url));
+//     }
+//     return NextResponse.next();
+//   }
+
+//   return NextResponse.next();
+// }
+
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match semua routes KECUALI:
+//      * - _next/static (static files)
+//      * - _next/image (image optimization)
+//      * - favicon.ico
+//      */
+//     "/((?!_next/static|_next/image|favicon.ico).*)",
+//   ],
+// };
