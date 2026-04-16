@@ -1,7 +1,7 @@
 "use client";
 
-import ProtectedRoute from "@/components/organisms/ProtectedRoutes";
+import ProtectedLayout from "@/components/organisms/ProtectedLayout";
 
 export default function LayoutDashboardPage({ children }) {
-  return <>{children};</>;
+  return <ProtectedLayout>{children};</ProtectedLayout>;
 }
