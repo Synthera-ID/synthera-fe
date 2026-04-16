@@ -54,13 +54,13 @@ export default function Login({ searchParams }) {
       .then((data) => {
         setLoginState({
           title: data.message,
-          message: "Redirecting to Dashboard...",
+          message: "Redirecting ...",
           status: 200,
           loading: false,
         });
         setTimeout(() => {
           setLoginState(null);
-          router.replace("/dashboard");
+          router.replace("/");
         }, 1000);
       })
       .catch((err) => {
