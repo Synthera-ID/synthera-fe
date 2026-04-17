@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/user`, {
+      const res = await fetch(`https://api.synthera.id/api/user`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

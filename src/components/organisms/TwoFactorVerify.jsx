@@ -81,7 +81,7 @@ export default function TwoFactorVerify({ progress = true }) {
     setError("");
 
     try {
-      const res = await fetch(`http://localhost:8000/api/2fa/verify`, {
+      const res = await fetch(`https://api.synthera.id/api/2fa/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -17,7 +17,7 @@ export default function TwoFactorPrompt() {
     setError("");
 
     try {
-      const res = await fetch(`http://localhost:8000/api/2fa/enable`, {
+      const res = await fetch(`https://api.synthera.id/api/2fa/enable`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

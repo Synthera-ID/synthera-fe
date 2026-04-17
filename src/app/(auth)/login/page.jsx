@@ -42,7 +42,7 @@ export default function Login({ searchParams }) {
 
     (async () => {
       try {
-        const test = await fetch("http://localhost:8000/api/auth/verify", {
+        const test = await fetch("https://api.synthera.id/api/auth/verify", {
           method: "POST",
           body: JSON.stringify({ token: 123 }),
           headers: {
