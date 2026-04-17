@@ -46,7 +46,6 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const hasSession = hasSessionCookie(request);
 
-  console.log(hasSession);
   // Public routes → langsung lewat
   if (matchRoute(pathname, publicRoutes)) {
     return NextResponse.next();

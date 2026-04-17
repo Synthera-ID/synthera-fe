@@ -42,17 +42,15 @@ export default function Login({ searchParams }) {
 
     (async () => {
       try {
-        const test = await fetch("https://api.synthera.id/api/auth/verify", {
+        const verifying = await fetch("https://api.synthera.id/api/auth/verify", {
           method: "POST",
-          body: JSON.stringify({ token: 123 }),
+          body: JSON.stringify({ token }),
           headers: {
             "Content-Type": "application/json",
           },
         });
-        const data = await test.json();
-        console.log(data);
+        const data = await verifying.json();
         if (data.success && data.token) {
-          console.log("tEST");
           setCookie("userAccessToken", data.token, 1);
           setLoginState({
             title: data.message,
