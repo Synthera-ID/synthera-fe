@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/hooks/apiFetch";
+import { getCookie } from "@/utils/cookie";
 
 const CODE_LENGTH = 6;
 
-export default function TwoFactorVerify() {
+export default function TwoFactorVerify({ progress = true }) {
   const router = useRouter();
   const [code, setCode] = useState(Array(CODE_LENGTH).fill(""));
   const [loading, setLoading] = useState(false);
@@ -81,10 +81,13 @@ export default function TwoFactorVerify() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await apiFetch(`/2fa/verify`, {
+      const res = await fetch(`http://localhost:8000/api/2fa/verify`, {
         method: "POST",
-        body: { code: verifyCode },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("userAccessToken")}`,
+        },
+        body: JSON.stringify({ code: verifyCode }),
       });
 
       if (!res.ok) {
@@ -156,19 +159,21 @@ export default function TwoFactorVerify() {
 
       <div className="relative z-10 w-full max-w-md">
         {/* progress */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
-            ✓
+        {progress && (
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
+              ✓
+            </div>
+            <div className="w-12 h-0.5 bg-violet-600" />
+            <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
+              ✓
+            </div>
+            <div className="w-12 h-0.5 bg-violet-600" />
+            <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold ring-4 ring-violet-600/20">
+              3
+            </div>
           </div>
-          <div className="w-12 h-0.5 bg-violet-600" />
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
-            ✓
-          </div>
-          <div className="w-12 h-0.5 bg-violet-600" />
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold ring-4 ring-violet-600/20">
-            3
-          </div>
-        </div>
+        )}
 
         {/* card */}
         <div className="bg-[#12122a]/80 backdrop-blur-2xl border border-white/[0.06] rounded-3xl p-8 shadow-2xl shadow-violet-900/10">

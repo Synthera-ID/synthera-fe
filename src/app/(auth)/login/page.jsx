@@ -8,7 +8,8 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/hooks/apiFetch";
+import apiFetch from "@/utils/apiFetch";
+import { setCookie, getCookie, removeCookie } from "@/utils/cookie";
 
 export default function Login({ searchParams }) {
   const [ButtonGoogleState, setButtonGoogleState] = useState(false);
@@ -39,28 +40,32 @@ export default function Login({ searchParams }) {
 
     setLoginState({ message: "Verifying your credentials...", title: "Initializing", loading: true });
 
-    apiFetch("/auth/verify", {
-      method: "POST",
-      body: { token },
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        return data;
-      })
-      .then((data) => {
-        setLoginState({
-          title: data.message,
-          message: "Redirecting ...",
-          status: 200,
-          loading: false,
+    (async () => {
+      try {
+        const test = await fetch("http://localhost:8000/api/auth/verify", {
+          method: "POST",
+          body: JSON.stringify({ token: 123 }),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        setTimeout(() => {
-          setLoginState(null);
-          router.replace("/2fa");
-        }, 1000);
-      })
-      .catch((err) => {
+        const data = await test.json();
+        console.log(data);
+        if (data.success && data.token) {
+          console.log("tEST");
+          setCookie("userAccessToken", data.token, 1);
+          setLoginState({
+            title: data.message,
+            message: "Redirecting ...",
+            status: 200,
+            loading: false,
+          });
+          setTimeout(() => {
+            setLoginState(null);
+            router.replace("/2fa");
+          }, 1000);
+        }
+      } catch (error) {
         setLoginState({
           title: "Authentication Failed.",
           message: err.message || "Something went wrong.",
@@ -71,7 +76,8 @@ export default function Login({ searchParams }) {
           setLoginState(null);
           router.replace("/login");
         }, 1000);
-      });
+      }
+    })();
   }, []);
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import DashboardSidebar from "@/app/dashboard/DashboardSidebar";
+import DashboardSidebar from "@/components/organisms/DashboardSidebar";
 import { Zap, BarChart2, Activity } from "lucide-react";
 
 const MONTHLY_DATA = [

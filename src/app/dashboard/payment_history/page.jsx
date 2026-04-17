@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import DashboardSidebar from "@/app/dashboard/DashboardSidebar";
+import DashboardSidebar from "@/components/organisms/DashboardSidebar";
 import {
   Search,
   Download,

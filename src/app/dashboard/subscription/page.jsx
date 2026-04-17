@@ -1,6 +1,6 @@
 "use client";
 
-import DashboardSidebar from "@/app/dashboard/DashboardSidebar";
+import DashboardSidebar from "@/components/organisms/DashboardSidebar";
 import { Check } from "lucide-react";
 
 export default function SubscriptionPage() {

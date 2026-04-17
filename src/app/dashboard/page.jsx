@@ -1,19 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import DashboardSidebar from "@/app/dashboard/DashboardSidebar";
+import DashboardSidebar from "@/components/organisms/DashboardSidebar";
 import { Box, Zap, Grid, Clock, CreditCard, Key, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading, twoFactorRequired } = useAuth();
+  const [User, setUser] = useState(null);
+  useEffect(() => {
+    setUser(user);
+    if (!loading && twoFactorRequired) {
+      router.replace("/2fa/verify");
+    }
+  }, [loading, twoFactorRequired, router]);
+
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  if (twoFactorRequired) {
-    router.replace("/2fa");
-  }
-  console.log("User : ", user);
+
+  if (twoFactorRequired) return null;
+
   return (
     <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
       <DashboardSidebar />
@@ -21,7 +29,7 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
       <main className="flex-1 p-8 lg:p-12 max-h-screen overflow-y-auto w-full scroll-smooth">
         <header className="mb-10">
-          <h1 className="text-[28px] font-bold mb-2">Welcome back, John! 👋</h1>
+          <h1 className="text-[28px] font-bold mb-2">Welcome back, {User?.name}! 👋</h1>
           <p className="text-text-2 text-sm">Here&apos;s what&apos;s happening with your account today.</p>
         </header>
 

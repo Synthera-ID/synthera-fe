@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TwoFactorQRScan from "@/components/organisms/TwoFactorQRScan";
-import { apiFetch } from "@/hooks/apiFetch";
+import { getCookie } from "@/utils/cookie";
 
 export default function TwoFactorPrompt() {
   const router = useRouter();
@@ -17,16 +17,20 @@ export default function TwoFactorPrompt() {
     setError("");
 
     try {
-      const res = await apiFetch(`/2fa/enable`, {
+      const res = await fetch(`http://localhost:8000/api/2fa/enable`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("userAccessToken")}`,
+        },
       });
 
+      const data = await res.json();
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.message || "Failed to enable 2FA.");
       }
 
-      const data = await res.json();
       setQrData({
         qr_code_url: data.qr_code_url,
         secret: data.secret,
@@ -47,7 +51,6 @@ export default function TwoFactorPrompt() {
   if (showQR && qrData) {
     return <TwoFactorQRScan qrData={qrData} />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#101029] to-[#0a0a1a] flex items-center justify-center px-4 py-12 relative overflow-hidden">
       {/* ambient glow */}

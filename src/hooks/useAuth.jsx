@@ -2,7 +2,7 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "./apiFetch";
+import { getCookie } from "@/utils/cookie";
 
 const AuthContext = createContext(null);
 
@@ -18,14 +18,21 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await apiFetch(`/user`);
+      const res = await fetch(`http://localhost:8000/api/user`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("userAccessToken")}`,
+        },
+      });
 
       if (res.ok) {
         const data = await res.json();
+        console.log(data)
         setUser(data);
 
         // Cek apakah 2FA required
-        if (data.two_factor_enabled && !data.two_factor_verified) {
+        if (data.two_factor_confirmed_at && data.two_factor_enabled && !data.two_factor_verified) {
           setTwoFactorRequired(true);
         }
       } else {

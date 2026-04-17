@@ -28,17 +28,8 @@ const guestRoutes = ["/login", "/register"];
  */
 const publicRoutes = ["/", "/privacy-policy", "/terms-of-services"];
 
-/**
- * Nama session cookie Laravel (cek config/session.php → 'cookie')
- * Default Laravel: APP_NAME_session (lowercase, spasi jadi underscore)
- * Contoh: jika APP_NAME=Synthera → synthera_session
- */
-const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "api-synthera-session";
-
 function matchRoute(pathname, routes) {
-  return routes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
-  );
+  return routes.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
 
 /**
@@ -47,19 +38,19 @@ function matchRoute(pathname, routes) {
  * Validasi real dilakukan client-side oleh komponen/hook.
  */
 function hasSessionCookie(request) {
-  const cookie = request.cookies.get(SESSION_COOKIE_NAME);
+  const cookie = request.cookies.get("userAccessToken");
   return !!cookie?.value;
 }
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
+  const hasSession = hasSessionCookie(request);
 
+  console.log(hasSession);
   // Public routes → langsung lewat
   if (matchRoute(pathname, publicRoutes)) {
     return NextResponse.next();
   }
-
-  const hasSession = hasSessionCookie(request);
 
   // ── GUEST ROUTES: punya session → redirect dashboard ──
   if (matchRoute(pathname, guestRoutes)) {
