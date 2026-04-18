@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TwoFactorQRScan from "@/components/organisms/TwoFactorQRScan";
 import { getCookie } from "@/utils/cookie";
+const API_BASE_URL = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 
 export default function TwoFactorPrompt() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function TwoFactorPrompt() {
     setError("");
 
     try {
-      const res = await fetch(`https://api.synthera.id/api/2fa/enable`, {
+      const res = await fetch(`${API_BASE_URL}/2fa/enable`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

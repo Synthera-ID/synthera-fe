@@ -2,9 +2,11 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { getCookie } from "@/utils/cookie";
+import { getCookie, removeCookie } from "@/utils/cookie";
 
 const AuthContext = createContext(null);
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 
 export function AuthProvider({ children }) {
   const router = useRouter();
@@ -18,7 +20,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch(`https://api.synthera.id/api/user`, {
+      const res = await fetch(`${API_BASE_URL}/user`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -36,6 +38,7 @@ export function AuthProvider({ children }) {
         }
       } else {
         // Session invalid / expired → redirect login
+        removeCookie("userAccessToken");
         setUser(null);
         router.push("/login");
       }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from "@/utils/cookie";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 const CODE_LENGTH = 6;
 
 export default function TwoFactorVerify({ progress = true }) {
@@ -81,7 +82,7 @@ export default function TwoFactorVerify({ progress = true }) {
     setError("");
 
     try {
-      const res = await fetch(`https://api.synthera.id/api/2fa/verify`, {
+      const res = await fetch(`${API_BASE_URL}/2fa/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
