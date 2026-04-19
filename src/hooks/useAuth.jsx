@@ -8,6 +8,7 @@ const AuthContext = createContext(null);
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 
+console.log(API_BASE_URL);
 export function AuthProvider({ children }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -29,7 +30,7 @@ export function AuthProvider({ children }) {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const { data } = await res.json();
         setUser(data);
 
         // Cek apakah 2FA required
