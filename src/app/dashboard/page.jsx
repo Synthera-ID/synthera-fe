@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import DashboardSidebar from "@/components/organisms/DashboardSidebar";
+import DashboardNavbar from "@/components/organisms/DashboardNavbar";
 import { Box, Zap, Grid, Clock, CreditCard, Key, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading, twoFactorRequired } = useAuth();
   const [User, setUser] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   useEffect(() => {
     setUser(user);
     if (!loading && twoFactorRequired) {
@@ -24,14 +26,20 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
-      <DashboardSidebar />
+      <DashboardSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 p-8 lg:p-12 max-h-screen overflow-y-auto w-full scroll-smooth">
-        <header className="mb-10">
-          <h1 className="text-[28px] font-bold mb-2">Welcome back, {User?.name}! 👋</h1>
-          <p className="text-text-2 text-sm">Here&apos;s what&apos;s happening with your account today.</p>
-        </header>
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+
+        <main className="flex-1 p-8 lg:p-12 overflow-y-auto w-full scroll-smooth">
+          <header className="mb-10">
+            <h1 className="text-[28px] font-bold mb-2">Welcome back, {User?.name}! 👋</h1>
+            <p className="text-text-2 text-sm">Here&apos;s what&apos;s happening with your account today.</p>
+          </header>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10 text-left">
@@ -95,8 +103,9 @@ export default function DashboardPage() {
               <ActionButton icon={Settings} label="Settings" href="/dashboard/profile" />
             </div>
           </div>
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

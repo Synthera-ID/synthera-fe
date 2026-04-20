@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import DashboardSidebar from "@/components/organisms/DashboardSidebar";
+import DashboardNavbar from "@/components/organisms/DashboardNavbar";
 import { Zap, BarChart2, Activity } from "lucide-react";
 
 const MONTHLY_DATA = [
@@ -38,13 +40,19 @@ export default function ApiUsagePage() {
   const rateLimitUsed = 7500;
   const rateLimitTotal = 10000;
   const ratePct = (rateLimitUsed / rateLimitTotal) * 100;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
-      <DashboardSidebar />
+      <DashboardSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 p-8 lg:p-12 max-h-screen overflow-y-auto w-full scroll-smooth">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+
+        <main className="flex-1 p-8 lg:p-12 overflow-y-auto w-full scroll-smooth">
 
         {/* Header */}
         <header className="mb-8">
@@ -151,9 +159,10 @@ export default function ApiUsagePage() {
               </div>
             );
           })}
-        </div>
+          </div>
 
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
