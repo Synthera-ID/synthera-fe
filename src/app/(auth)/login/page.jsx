@@ -8,6 +8,8 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { setCookie } from "@/utils/cookie";
+const API_BASE_URL = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 
 export default function Login({ searchParams }) {
   const [ButtonGoogleState, setButtonGoogleState] = useState(false);
@@ -38,32 +40,36 @@ export default function Login({ searchParams }) {
 
     setLoginState({ message: "Verifying your credentials...", title: "Initializing", loading: true });
 
-    fetch("https://api.synthera.id/api/auth/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ token }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        return data;
-      })
-      .then((data) => {
-        setLoginState({
-          title: data.message,
-          message: "Redirecting to Dashboard...",
-          status: 200,
-          loading: false,
+    (async () => {
+      try {
+        const verifying = await fetch(`${API_BASE_URL}/auth/verify`, {
+          method: "POST",
+          body: JSON.stringify({ token }),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        setTimeout(() => {
-          setLoginState(null);
-          router.replace("/dashboard");
-        }, 1000);
-      })
-      .catch((err) => {
+        const data = await verifying.json();
+        if (data.success && data.token) {
+          setCookie("userAccessToken", data.token, 1);
+          setLoginState({
+            title: data.message,
+            message: "Redirecting ...",
+            status: 200,
+            loading: false,
+          });
+          console.log(data);
+          setTimeout(() => {
+            setLoginState(null);
+            if (!data.two_factor_enabled && !data.two_factor_verified) {
+              router.replace("/2fa");
+            }
+            if (data.two_factor_enabled && !data.two_factor_verified) {
+              router.replace("/2fa/verify");
+            }
+          }, 1000);
+        }
+      } catch (error) {
         setLoginState({
           title: "Authentication Failed.",
           message: err.message || "Something went wrong.",
@@ -74,7 +80,8 @@ export default function Login({ searchParams }) {
           setLoginState(null);
           router.replace("/login");
         }, 1000);
-      });
+      }
+    })();
   }, []);
 
   return (
