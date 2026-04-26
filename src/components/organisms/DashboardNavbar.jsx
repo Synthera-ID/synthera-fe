@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, ChevronRight, User, LogOut } from "lucide-react";
+import { Menu, ChevronRight, User, Users, Info, LogOut } from "lucide-react";
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 const LABEL_MAP = {
@@ -14,6 +14,8 @@ const LABEL_MAP = {
   payment_history: "Payment History",
   profile: "Profile",
   subscription: "Subscription",
+  user_management: "User Management",
+  general_information: "General Information",
 };
 
 function useBreadcrumbs(pathname) {
@@ -194,6 +196,34 @@ export default function DashboardNavbar({ onToggleSidebar }) {
             >
               <User size={15} className="text-[#6B7280] shrink-0" />
               Profile
+            </Link>
+
+            <Link
+              href="/dashboard/user_management"
+              onClick={() => setDropdownOpen(false)}
+              className="
+                flex items-center gap-3 px-3 py-2.5 rounded-xl
+                text-[13px] text-[#9CA3AF]
+                hover:text-white hover:bg-[#1A1A24]
+                transition-all duration-150
+              "
+            >
+              <Users size={15} className="text-[#6B7280] shrink-0" />
+              User Management
+            </Link>
+
+            <Link
+              href="/dashboard/general_information"
+              onClick={() => setDropdownOpen(false)}
+              className="
+                flex items-center gap-3 px-3 py-2.5 rounded-xl
+                text-[13px] text-[#9CA3AF]
+                hover:text-white hover:bg-[#1A1A24]
+                transition-all duration-150
+              "
+            >
+              <Info size={15} className="text-[#6B7280] shrink-0" />
+              General Info
             </Link>
 
             <button

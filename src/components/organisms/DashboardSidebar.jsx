@@ -12,18 +12,23 @@ import {
   Grid,
   Clock,
   User,
+  Users,
+  Info,
   X,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { label: "Dashboard",       href: "/dashboard",                icon: Home      },
-  { label: "Subscription",    href: "/dashboard/subscription",   icon: CreditCard },
-  { label: "API Keys",        href: "/dashboard/api_keys",       icon: Key       },
-  { label: "API Usage",       href: "/dashboard/api_usage",      icon: BarChart2 },
-  { label: "Digital Content", href: "/dashboard/digital_content",icon: Grid      },
-  { label: "Payment History", href: "/dashboard/payment_history",icon: Clock     },
-  { label: "Profile",         href: "/dashboard/profile",        icon: User      },
+  { label: "Dashboard",           href: "/dashboard",                      icon: Home      },
+  { label: "Subscription",        href: "/dashboard/subscription",         icon: CreditCard },
+  { label: "API Keys",            href: "/dashboard/api_keys",             icon: Key       },
+  { label: "API Usage",           href: "/dashboard/api_usage",            icon: BarChart2 },
+  { label: "Digital Content",     href: "/dashboard/digital_content",      icon: Grid      },
+  { label: "Payment History",     href: "/dashboard/payment_history",      icon: Clock     },
+  { label: "Profile",             href: "/dashboard/profile",              icon: User      },
+  { label: "User Management",     href: "/dashboard/user_management",      icon: Users     },
+  { label: "General Information", href: "/dashboard/general_information",  icon: Info      },
 ];
+
 
 /**
  * DashboardSidebar
