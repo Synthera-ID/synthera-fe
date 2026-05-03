@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, ChevronRight, User, Users, Info, LogOut } from "lucide-react";
+import Image from "next/image";
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 const LABEL_MAP = {
@@ -28,9 +29,10 @@ function useBreadcrumbs(pathname) {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function DashboardNavbar({ onToggleSidebar }) {
+export default function DashboardNavbar({ onToggleSidebar, UserData }) {
   const pathname = usePathname();
   const router = useRouter();
+  console.log(UserData);
   const breadcrumbs = useBreadcrumbs(pathname);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -54,10 +56,8 @@ export default function DashboardNavbar({ onToggleSidebar }) {
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between h-[60px] px-4 md:px-6 bg-[#0D0D12]/95 backdrop-blur-md border-b border-[#1A1A24] shrink-0">
-
       {/* ── Left: Hamburger + Breadcrumbs ─────────────────────────────────── */}
       <div className="flex items-center gap-3">
-
         {/* Hamburger */}
         <button
           id="sidebar-toggle-btn"
@@ -76,22 +76,14 @@ export default function DashboardNavbar({ onToggleSidebar }) {
         </button>
 
         {/* Breadcrumbs — hidden on xs */}
-        <nav
-          aria-label="Breadcrumb"
-          className="hidden sm:flex items-center gap-1 text-[13px]"
-        >
+        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1 text-[13px]">
           {breadcrumbs.map((crumb, i) => (
             <div key={crumb.href} className="flex items-center gap-1">
-              {i > 0 && (
-                <ChevronRight size={13} className="text-[#2D2D3A] mx-0.5" />
-              )}
+              {i > 0 && <ChevronRight size={13} className="text-[#2D2D3A] mx-0.5" />}
               {crumb.isLast ? (
                 <span className="font-medium text-white/90">{crumb.label}</span>
               ) : (
-                <Link
-                  href={crumb.href}
-                  className="text-[#6B7280] hover:text-[#A78BFA] transition-colors duration-150"
-                >
+                <Link href={crumb.href} className="text-[#6B7280] hover:text-[#A78BFA] transition-colors duration-150">
                   {crumb.label}
                 </Link>
               )}
@@ -102,7 +94,6 @@ export default function DashboardNavbar({ onToggleSidebar }) {
 
       {/* ── Right: Avatar Dropdown ─────────────────────────────────────────── */}
       <div className="relative" ref={dropdownRef}>
-
         {/* Trigger button */}
         <button
           id="avatar-dropdown-btn"
@@ -119,21 +110,25 @@ export default function DashboardNavbar({ onToggleSidebar }) {
           "
         >
           {/* Avatar circle */}
-          <div
-            className="
-              w-8 h-8 rounded-full shrink-0
-              bg-gradient-to-br from-[#8B5CF6] to-[#4F46E5]
-              flex items-center justify-center
-              text-white text-[12px] font-bold
-              shadow-[0_0_14px_rgba(139,92,246,0.35)]
-            "
-          >
-            S
-          </div>
+          {UserData && UserData?.avatar_url ? (
+            <img src={UserData.avatar_url} className="w-8 h-8 rounded-full shrink-0" alt="Avatar Profile" />
+          ) : (
+            <div
+              className="
+          w-8 h-8 rounded-full shrink-0
+          bg-gradient-to-br from-[#8B5CF6] to-[#4F46E5]
+          flex items-center justify-center
+          text-white text-[12px] font-bold
+          shadow-[0_0_14px_rgba(139,92,246,0.35)]
+          "
+            >
+              {UserData?.name[0]}
+            </div>
+          )}
 
           {/* Name + plan — hidden on xs */}
           <div className="hidden md:flex flex-col items-start leading-tight">
-            <span className="text-[13px] font-semibold text-white">Samuel</span>
+            <span className="text-[13px] font-semibold text-white">{UserData?.name}</span>
             <span className="text-[11px] text-[#6B7280]">Pro Plan</span>
           </div>
 
@@ -156,28 +151,34 @@ export default function DashboardNavbar({ onToggleSidebar }) {
             rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.6)]
             overflow-hidden
             transition-all duration-200
-            ${dropdownOpen
-              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-              : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+            ${
+              dropdownOpen
+                ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
             }
           `}
         >
           {/* User info header */}
           <div className="px-4 py-3.5 border-b border-[#1A1A24]">
             <div className="flex items-center gap-2.5">
-              <div
-                className="
-                  w-8 h-8 rounded-full shrink-0
-                  bg-gradient-to-br from-[#8B5CF6] to-[#4F46E5]
-                  flex items-center justify-center
-                  text-white text-[11px] font-bold
-                "
-              >
-                S
-              </div>
+              {UserData && UserData?.avatar_url ? (
+                <img src={UserData.avatar_url} className="w-8 h-8 rounded-full shrink-0" alt="Avatar Profile" />
+              ) : (
+                <div
+                  className="
+          w-8 h-8 rounded-full shrink-0
+          bg-gradient-to-br from-[#8B5CF6] to-[#4F46E5]
+          flex items-center justify-center
+          text-white text-[12px] font-bold
+          shadow-[0_0_14px_rgba(139,92,246,0.35)]
+          "
+                >
+                  {UserData?.name[0]}
+                </div>
+              )}
               <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-white truncate">Samuel</div>
-                <div className="text-[11px] text-[#6B7280] truncate">samuel@synthera.id</div>
+                <div className="text-[13px] font-semibold text-white truncate">{UserData?.name}</div>
+                <div className="text-[11px] text-[#6B7280] truncate">{UserData?.email}</div>
               </div>
             </div>
           </div>
