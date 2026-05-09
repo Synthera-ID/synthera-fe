@@ -55,78 +55,65 @@ export default function DigitalContentPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+    <>
+      {/* Header */}
+      <header className="mb-8">
+        <h1 className="text-[26px] font-bold mb-1.5">Digital Content</h1>
+        <p className="text-text-3 text-[13px]">Browse and access your premium content library.</p>
+      </header>
 
-      <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
-
-        <main className="flex-1 p-8 lg:p-12 overflow-y-auto w-full scroll-smooth">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-[26px] font-bold mb-1.5">Digital Content</h1>
-          <p className="text-text-3 text-[13px]">Browse and access your premium content library.</p>
-        </header>
-
-        {/* Filters Area */}
-        <div className="flex flex-col md:flex-row gap-3 mb-8">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search content..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 h-[44px] bg-bg-2 border border-bg-3 rounded-xl text-[14px] text-text-1 placeholder:text-text-3 focus:outline-none focus:border-primary-1/40 transition-colors"
-            />
-          </div>
-          <button className="flex items-center justify-between gap-3 h-[44px] px-4 min-w-[140px] bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 hover:bg-bg-3/50 transition-colors">
-            All Categories <ChevronDown size={14} className="text-text-3" />
-          </button>
-          <button className="flex items-center justify-between gap-3 h-[44px] px-4 min-w-[130px] bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 hover:bg-bg-3/50 transition-colors">
-            All Access <ChevronDown size={14} className="text-text-3" />
-          </button>
+      {/* Filters Area */}
+      <div className="flex flex-col md:flex-row gap-3 mb-8">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search content..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-11 pr-4 h-[44px] bg-bg-2 border border-bg-3 rounded-xl text-[14px] text-text-1 placeholder:text-text-3 focus:outline-none focus:border-primary-1/40 transition-colors"
+          />
         </div>
+        <button className="flex items-center justify-between gap-3 h-[44px] px-4 min-w-[140px] bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 hover:bg-bg-3/50 transition-colors">
+          All Categories <ChevronDown size={14} className="text-text-3" />
+        </button>
+        <button className="flex items-center justify-between gap-3 h-[44px] px-4 min-w-[130px] bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 hover:bg-bg-3/50 transition-colors">
+          All Access <ChevronDown size={14} className="text-text-3" />
+        </button>
+      </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {CONTENT_ITEMS.map((item) => (
-            <div
-              key={item.id}
-              className="bg-bg-2 border border-bg-3 rounded-[20px] overflow-hidden flex flex-col group hover:border-bg-4 hover:shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition-all duration-300"
-            >
-              {/* Top Gradient Area */}
-              <div
-                className={`h-[160px] bg-gradient-to-br ${item.gradient} flex items-center justify-center`}
-              >
-                <File size={22} className="text-white/80 group-hover:text-white transition-colors" />
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {CONTENT_ITEMS.map((item) => (
+          <div
+            key={item.id}
+            className="bg-bg-2 border border-bg-3 rounded-[20px] overflow-hidden flex flex-col group hover:border-bg-4 hover:shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition-all duration-300"
+          >
+            {/* Top Gradient Area */}
+            <div className={`h-[160px] bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
+              <File size={22} className="text-white/80 group-hover:text-white transition-colors" />
+            </div>
+
+            {/* Bottom Content Area */}
+            <div className="p-6 flex flex-col flex-1">
+              <div className="flex items-start justify-between mb-8">
+                <div>
+                  <h3 className="text-[14px] font-bold text-text-1">{item.title}</h3>
+                  <p className="text-[11px] text-text-3 mt-1.5">{item.category}</p>
+                </div>
+                <Badge tier={item.tier} />
               </div>
 
-              {/* Bottom Content Area */}
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-8">
-                  <div>
-                    <h3 className="text-[14px] font-bold text-text-1">{item.title}</h3>
-                    <p className="text-[11px] text-text-3 mt-1.5">{item.category}</p>
-                  </div>
-                  <Badge tier={item.tier} />
-                </div>
-
-                <div className="mt-auto">
-                  <button className="w-full h-[40px] flex items-center gap-2.5 px-4 rounded-xl bg-transparent border border-primary-1/20 text-primary-3 text-[13px] font-bold hover:bg-primary-1/10 hover:border-primary-1/30 transition-all">
-                    <Download size={15} /> Access
-                  </button>
-                </div>
+              <div className="mt-auto">
+                <button className="w-full h-[40px] flex items-center gap-2.5 px-4 rounded-xl bg-transparent border border-primary-1/20 text-primary-3 text-[13px] font-bold hover:bg-primary-1/10 hover:border-primary-1/30 transition-all">
+                  <Download size={15} /> Access
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-        </main>
+          </div>
+        ))}
       </div>
-    </div>
+    </>
   );
 }
 

@@ -4,5 +4,6 @@
 import { AuthProvider } from "@/hooks/useAuth";
 
 export default function ProtectedLayout({ children }) {
+
   return <AuthProvider>{children}</AuthProvider>;
 }

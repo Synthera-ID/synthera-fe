@@ -17,26 +17,42 @@ import {
   X,
 } from "lucide-react";
 
+/**
+ * NAV_ITEMS with role-based access
+ * roles: which roles can see this item. ADMIN can access ALL.
+ */
 const NAV_ITEMS = [
-  { label: "Dashboard",           href: "/dashboard",                      icon: Home      },
-  { label: "Subscription",        href: "/dashboard/subscription",         icon: CreditCard },
-  { label: "API Keys",            href: "/dashboard/api_keys",             icon: Key       },
-  { label: "API Usage",           href: "/dashboard/api_usage",            icon: BarChart2 },
-  { label: "Digital Content",     href: "/dashboard/digital_content",      icon: Grid      },
-  { label: "Payment History",     href: "/dashboard/payment_history",      icon: Clock     },
-  { label: "Profile",             href: "/dashboard/profile",              icon: User      },
-  { label: "User Management",     href: "/dashboard/user_management",      icon: Users     },
-  { label: "General Information", href: "/dashboard/general_information",  icon: Info      },
+  { label: "Dashboard",           href: "/dashboard",                      icon: Home,       roles: ["ADMIN", "MEMBER"] },
+  { label: "Profile",             href: "/dashboard/profile",              icon: User,       roles: ["ADMIN", "MEMBER"] },
+  { label: "Subscription",        href: "/dashboard/subscription",         icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
+  { label: "API Keys",            href: "/dashboard/api_keys",             icon: Key,        roles: ["ADMIN", "MEMBER"] },
+  { label: "API Usage",           href: "/dashboard/api_usage",            icon: BarChart2,  roles: ["ADMIN", "MEMBER"] },
+  { label: "Digital Content",     href: "/dashboard/digital_content",      icon: Grid,       roles: ["ADMIN"] },
+  { label: "Payment History",     href: "/dashboard/payment_history",      icon: Clock,      roles: ["ADMIN"] },
+  { label: "User Management",     href: "/dashboard/user_management",      icon: Users,      roles: ["ADMIN"] },
+  { label: "General Information", href: "/dashboard/general_information",  icon: Info,       roles: ["ADMIN"] },
 ];
 
+/** Routes accessible by MEMBER role */
+export const MEMBER_ALLOWED_ROUTES = [
+  "/dashboard",
+  "/dashboard/profile",
+  "/dashboard/subscription",
+  "/dashboard/api_keys",
+  "/dashboard/api_usage",
+];
 
 /**
  * DashboardSidebar
- * @param {boolean}  isOpen  – controls visibility on mobile (default false)
- * @param {function} onClose – called when user clicks overlay or close button
+ * @param {boolean}  isOpen   – controls visibility on mobile (default false)
+ * @param {function} onClose  – called when user clicks overlay or close button
+ * @param {string}   userRole – "ADMIN" | "MEMBER"
  */
-export default function DashboardSidebar({ isOpen = false, onClose }) {
+export default function DashboardSidebar({ isOpen = false, onClose, userRole = "MEMBER" }) {
   const pathname = usePathname();
+
+  // Filter nav items based on role
+  const filteredItems = NAV_ITEMS.filter((item) => item.roles.includes(userRole));
 
   return (
     <>
@@ -99,11 +115,11 @@ export default function DashboardSidebar({ isOpen = false, onClose }) {
         {/* ── Navigation ──────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           <div className="px-6 text-[10px] font-bold text-[#6B7280] tracking-widest mb-3">
-            USER PANEL
+            {userRole === "ADMIN" ? "ADMIN PANEL" : "USER PANEL"}
           </div>
 
           <nav className="flex flex-col gap-0.5 px-3">
-            {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+            {filteredItems.map(({ label, href, icon: Icon }) => {
               const isActive =
                 href === "/dashboard"
                   ? pathname === "/dashboard"
@@ -113,7 +129,6 @@ export default function DashboardSidebar({ isOpen = false, onClose }) {
                 <Link
                   key={href}
                   href={href}
-                  onClick={onClose}  /* auto-close on mobile nav */
                   className={`
                     flex items-center gap-3 px-4 py-2.5 rounded-xl
                     border transition-all duration-200

@@ -58,7 +58,6 @@ export default function Login({ searchParams }) {
             status: 200,
             loading: false,
           });
-          console.log(data);
           setTimeout(() => {
             setLoginState(null);
             if (!data.two_factor_enabled && !data.two_factor_verified) {

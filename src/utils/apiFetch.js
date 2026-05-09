@@ -4,37 +4,87 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/
 
 const apiFetch = {
   async request(endpoint, options = {}) {
-    const token = getCookie("auth_token");
+    const token = getCookie("userAccessToken");
 
     const res = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
+      method: options.method || "GET",
       headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-        Accept: "application/json",
         "Content-Type": "application/json",
+        Accept: "application/json",
+
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
+
         ...options.headers,
       },
+
+      body: options.body,
     });
 
+    // unauthorized
     if (res.status === 401) {
-      removeCookie("auth_token");
-      window.location.href = "/login";
+      removeCookie("userAccessToken");
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+
+      return null;
     }
 
-    return res.json();
+    // handle non-json response
+    const contentType = res.headers.get("content-type");
+
+    const data = contentType?.includes("application/json") ? await res.json() : await res.text();
+
+    // throw error jika gagal
+    if (!res.ok) {
+      throw {
+        status: res.status,
+        data,
+      };
+    }
+
+    return data;
   },
 
-  get(endpoint) {
-    return this.request(endpoint);
+  get(endpoint, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "GET",
+    });
   },
-  post(endpoint, data) {
-    return this.request(endpoint, { method: "POST", body: JSON.stringify(data) });
+
+  post(endpoint, data = {}, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
-  put(endpoint, data) {
-    return this.request(endpoint, { method: "PUT", body: JSON.stringify(data) });
+
+  put(endpoint, data = {}, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
   },
-  delete(endpoint) {
-    return this.request(endpoint, { method: "DELETE" });
+
+  patch(endpoint, data = {}, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete(endpoint, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: "DELETE",
+    });
   },
 };
 

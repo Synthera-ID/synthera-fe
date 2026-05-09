@@ -32,7 +32,6 @@ function useBreadcrumbs(pathname) {
 export default function DashboardNavbar({ onToggleSidebar, UserData }) {
   const pathname = usePathname();
   const router = useRouter();
-  console.log(UserData);
   const breadcrumbs = useBreadcrumbs(pathname);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -129,7 +128,7 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
           {/* Name + plan — hidden on xs */}
           <div className="hidden md:flex flex-col items-start leading-tight">
             <span className="text-[13px] font-semibold text-white">{UserData?.name}</span>
-            <span className="text-[11px] text-[#6B7280]">Pro Plan</span>
+            <span className="text-[11px] text-[#6B7280]">{UserData?.role}</span>
           </div>
 
           {/* Chevron */}
@@ -198,21 +197,6 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
               <User size={15} className="text-[#6B7280] shrink-0" />
               Profile
             </Link>
-
-            <Link
-              href="/dashboard/user_management"
-              onClick={() => setDropdownOpen(false)}
-              className="
-                flex items-center gap-3 px-3 py-2.5 rounded-xl
-                text-[13px] text-[#9CA3AF]
-                hover:text-white hover:bg-[#1A1A24]
-                transition-all duration-150
-              "
-            >
-              <Users size={15} className="text-[#6B7280] shrink-0" />
-              User Management
-            </Link>
-
             <Link
               href="/dashboard/general_information"
               onClick={() => setDropdownOpen(false)}
