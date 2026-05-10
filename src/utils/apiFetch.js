@@ -1,6 +1,6 @@
 import { getCookie, removeCookie } from "@/utils/cookie";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_APP_API_URL || "http://localhost:8000/api";
 
 const apiFetch = {
   async request(endpoint, options = {}) {

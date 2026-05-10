@@ -106,6 +106,7 @@ export default function ProfilePage() {
     phone: user.phone,
     company: user.company_code,
     twoFA: user.two_factor_enabled,
+    avatar_url: user.avatar_url,
   });
   const [twoFA, setTwoFA] = useState(profile.twoFA);
 
@@ -301,14 +302,29 @@ export default function ProfilePage() {
         <div className="bg-bg-2 border border-bg-3 rounded-2xl p-6">
           {/* Avatar Row */}
           <div className="flex items-center gap-4 mb-6">
-            <Avatar name={profile.fullName} />
+            {/* <Avatar name={profile.avatar_url} /> */}
+            {profile && profile?.avatar_url ? (
+              <img src={profile.avatar_url} className="w-16 h-16 rounded-full shrink-0" alt="Avatar Profile" />
+            ) : (
+              <div
+                className="
+          w-8 h-8 rounded-full shrink-0
+          bg-gradient-to-br from-[#8B5CF6] to-[#4F46E5]
+          flex items-center justify-center
+          text-white text-[12px] font-bold
+          shadow-[0_0_14px_rgba(139,92,246,0.35)]
+          "
+              >
+                {UserData?.name[0]}
+              </div>
+            )}
             <div>
               <h2 className="text-base font-semibold">{profile.fullName}</h2>
               <p className="text-[13px] mt-0.5 text-text-3">{profile.email}</p>
-              <button className="flex items-center gap-1.5 text-[12px] font-medium mt-2 px-3 py-1.5 rounded-lg border border-primary-1/40 text-primary-3 hover:bg-primary-1/10 transition-colors">
+              {/* <button className="flex items-center gap-1.5 text-[12px] font-medium mt-2 px-3 py-1.5 rounded-lg border border-primary-1/40 text-primary-3 hover:bg-primary-1/10 transition-colors">
                 <img src="/icon/upload.svg" alt="Upload" className="w-4 h-4" />
                 Change Avatar
-              </button>
+              </button> */}
             </div>
           </div>
 

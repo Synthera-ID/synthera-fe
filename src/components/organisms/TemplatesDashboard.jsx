@@ -13,6 +13,7 @@ export default function TemplatesDashboard({ children }) {
 
   const userRole = user?.role || "MEMBER";
 
+  console.log(user)
   // ── Route guard: redirect MEMBER from admin-only pages ──────────────
   useEffect(() => {
     if (userRole !== "ADMIN") {

@@ -87,7 +87,7 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           transition-all duration-300 ease-in-out
           ${isOpen
             ? "translate-x-0"
-            : "-translate-x-full md:hidden"
+            : "-translate-x-full md:translate-x-0"
           }
         `}
       >
