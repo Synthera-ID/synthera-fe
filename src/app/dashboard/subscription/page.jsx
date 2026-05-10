@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Loader2, X, QrCode, CreditCard, ShieldCheck } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Check, Loader2, X, QrCode, ShieldCheck, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import apiFetch from "@/utils/apiFetch";
 import { formatPrice, formatRupiah, formatDate } from "@/utils/format";
@@ -27,6 +27,10 @@ const TIER_STYLES = {
   },
 };
 
+const PAYMENT_METHODS = [
+  { id: "qris", code: "SP", label: "QRIS", icon: QrCode, desc: "Scan & bayar via e-wallet / m-banking" },
+];
+
 // ─── Modal Backdrop ───────────────────────────────────────────────────────────
 function ModalBackdrop({ children, onClose }) {
   return (
@@ -42,10 +46,31 @@ function ModalBackdrop({ children, onClose }) {
 // ─── Confirm Modal (Step 1) ───────────────────────────────────────────────────
 function ConfirmModal({ plan, onConfirm, onClose }) {
   const [method, setMethod] = useState("qris");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const methods = [
-    { id: "qris", label: "QRIS", icon: QrCode, desc: "Scan & bayar via e-wallet / m-banking" },
-  ];
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const selectedMethod = PAYMENT_METHODS.find((m) => m.id === method);
+      const payload = {
+        plan_id: plan.id,
+        payment_method: selectedMethod?.code || "SP",
+      };
+
+      const res = await apiFetch.post("/transactions", payload);
+
+      // Pass the real response data to the payment modal
+      onConfirm(method, res.data);
+    } catch (err) {
+      const message = err?.data?.message || "Gagal membuat transaksi. Silakan coba lagi.";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <ModalBackdrop onClose={onClose}>
@@ -53,7 +78,7 @@ function ConfirmModal({ plan, onConfirm, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-bg-3">
           <h3 className="text-[16px] font-bold">Konfirmasi Upgrade</h3>
-          <button onClick={onClose} className="text-text-3 hover:text-text-1 transition-colors">
+          <button onClick={onClose} className="text-text-3 hover:text-text-1 transition-colors" disabled={submitting}>
             <X size={18} />
           </button>
         </div>
@@ -74,7 +99,10 @@ function ConfirmModal({ plan, onConfirm, onClose }) {
             <div className="border-t border-bg-3" />
             <div className="flex items-center justify-between">
               <span className="text-[12px] text-text-3">Harga</span>
-              <span className="text-[13px] font-bold">{formatRupiah(plan.price)}<span className="text-text-3 font-normal">/bulan</span></span>
+              <span className="text-[13px] font-bold">
+                {formatRupiah(plan.price)}
+                <span className="text-text-3 font-normal">/bulan</span>
+              </span>
             </div>
             <div className="border-t border-bg-3" />
             <div className="flex items-center justify-between">
@@ -87,45 +115,66 @@ function ConfirmModal({ plan, onConfirm, onClose }) {
           <div>
             <p className="text-[12px] font-semibold text-text-3 mb-3">Metode Pembayaran</p>
             <div className="space-y-2">
-              {methods.map((m) => (
+              {PAYMENT_METHODS.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setMethod(m.id)}
+                  disabled={submitting}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 text-left ${
                     method === m.id
                       ? "border-primary-1 bg-primary-1/10"
                       : "border-bg-3 hover:border-bg-3/80 hover:bg-bg-1"
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${method === m.id ? "bg-primary-1/20 text-primary-3" : "bg-bg-3 text-text-3"}`}>
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${method === m.id ? "bg-primary-1/20 text-primary-3" : "bg-bg-3 text-text-3"}`}
+                  >
                     <m.icon size={16} />
                   </div>
                   <div className="flex-1">
                     <span className="text-[13px] font-semibold">{m.label}</span>
                     <p className="text-[11px] text-text-3">{m.desc}</p>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${method === m.id ? "border-primary-1" : "border-bg-3"}`}>
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${method === m.id ? "border-primary-1" : "border-bg-3"}`}
+                  >
                     {method === m.id && <div className="w-2 h-2 rounded-full bg-primary-1" />}
                   </div>
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
+              <p className="text-[12px] text-red-400 font-medium">{error}</p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center gap-3 px-6 py-5 border-t border-bg-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-[13px] font-medium text-text-1 hover:bg-bg-3 transition-colors"
+            disabled={submitting}
+            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-[13px] font-medium text-text-1 hover:bg-bg-3 transition-colors disabled:opacity-50"
           >
             Batal
           </button>
           <button
-            onClick={() => onConfirm(method)}
-            className="flex-1 py-2.5 rounded-xl bg-primary-1 text-white text-[13px] font-semibold hover:bg-primary-2 transition-all shadow-lg shadow-primary-1/20 active:scale-[0.98]"
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="flex-1 py-2.5 rounded-xl bg-primary-1 text-white text-[13px] font-semibold hover:bg-primary-2 transition-all shadow-lg shadow-primary-1/20 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            Lanjut Bayar
+            {submitting ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              "Lanjut Bayar"
+            )}
           </button>
         </div>
       </div>
@@ -134,16 +183,12 @@ function ConfirmModal({ plan, onConfirm, onClose }) {
 }
 
 // ─── Payment Modal (Step 2) ───────────────────────────────────────────────────
-function PaymentModal({ plan, method, onClose }) {
-  // Dummy QRIS data
-  const qrisData = {
-    qr_url: "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=SYNTHERA-UPGRADE-" + plan.id,
-    expired_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 min from now
-    transaction_id: "TRX-" + Date.now().toString(36).toUpperCase(),
-  };
-
+function PaymentModal({ plan, transactionData, onClose }) {
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes
+  const [status, setStatus] = useState("pending");
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -159,6 +204,38 @@ function PaymentModal({ plan, method, onClose }) {
 
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const seconds = String(timeLeft % 60).padStart(2, "0");
+
+  // Refresh status handler
+  const handleRefreshStatus = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+
+    try {
+      const res = await apiFetch.get(`/transactions/${transactionData.invoice_code}/status`);
+      console.log(res)
+      const newStatus = res?.transaction_status || res?.status || "pending";
+      setStatus(newStatus);
+
+      if (newStatus === "success" || newStatus === "paid" || newStatus === "completed") {
+        setStatus("success");
+      } else if (newStatus === "failed" || newStatus === "expired" || newStatus === "cancelled") {
+        setStatus("failed");
+      }
+    } catch {
+      // Silently fail, keep current status
+    } finally {
+      setRefreshing(false);
+    }
+  }, [transactionData.invoice_code, refreshing]);
+
+  // Status badge
+  const statusConfig = {
+    pending: { label: "Menunggu Pembayaran", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
+    success: { label: "Pembayaran Berhasil", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+    failed: { label: "Pembayaran Gagal", color: "text-red-400 bg-red-500/10 border-red-500/20" },
+  };
+
+  const currentStatus = statusConfig[status] || statusConfig.pending;
 
   return (
     <ModalBackdrop onClose={onClose}>
@@ -181,22 +258,45 @@ function PaymentModal({ plan, method, onClose }) {
             </span>
           </div>
 
-          {/* QR Code */}
-          <div className="bg-white rounded-2xl p-4 shadow-lg">
-            <img
-              src={qrisData.qr_url}
-              alt="QRIS Payment"
-              width={220}
-              height={220}
-              className="rounded-lg"
-            />
+          {/* QR Code from real payment_url */}
+          {status === "success" ? (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-8 flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check size={32} className="text-emerald-400" strokeWidth={3} />
+              </div>
+              <p className="text-[14px] font-bold text-emerald-400">Pembayaran Berhasil!</p>
+              <p className="text-[12px] text-text-3 text-center">Subscription Anda akan segera diaktifkan.</p>
+            </div>
+          ) : status === "failed" ? (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                <X size={32} className="text-red-400" strokeWidth={3} />
+              </div>
+              <p className="text-[14px] font-bold text-red-400">Pembayaran Gagal</p>
+              <p className="text-[12px] text-text-3 text-center">Silakan coba lagi atau hubungi support.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-4 shadow-lg">
+              <img
+                src={transactionData.payment_url}
+                alt="QRIS Payment"
+                width={220}
+                height={220}
+                className="rounded-lg"
+              />
+            </div>
+          )}
+
+          {/* Status Badge */}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${currentStatus.color}`}>
+            <span className="text-[12px] font-semibold">{currentStatus.label}</span>
           </div>
 
           {/* Info */}
           <div className="w-full bg-bg-1 border border-bg-3 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-text-3">Transaction ID</span>
-              <span className="text-[12px] font-mono font-semibold">{qrisData.transaction_id}</span>
+              <span className="text-[12px] text-text-3">Invoice</span>
+              <span className="text-[12px] font-mono font-semibold">{transactionData.invoice_code}</span>
             </div>
             <div className="border-t border-bg-3" />
             <div className="flex items-center justify-between">
@@ -205,21 +305,50 @@ function PaymentModal({ plan, method, onClose }) {
             </div>
             <div className="border-t border-bg-3" />
             <div className="flex items-center justify-between">
+              <span className="text-[12px] text-text-3">Metode</span>
+              <span className="text-[13px] font-medium">{transactionData.payment_method === "SP" ? "QRIS" : transactionData.payment_method}</span>
+            </div>
+            <div className="border-t border-bg-3" />
+            <div className="flex items-center justify-between">
               <span className="text-[12px] text-text-3">Total</span>
-              <span className="text-[14px] font-bold text-primary-3">{formatRupiah(plan.price)}</span>
+              <span className="text-[14px] font-bold text-primary-3">{formatRupiah(transactionData.amount)}</span>
             </div>
           </div>
 
+          {/* Refresh Status Button */}
+          {status === "pending" && (
+            <button
+              onClick={handleRefreshStatus}
+              disabled={refreshing}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary-1/40 text-primary-3 text-[13px] font-semibold hover:bg-primary-1/10 transition-all active:scale-[0.98] disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              <span>{refreshing ? "Memeriksa..." : "Refresh Status Pembayaran"}</span>
+            </button>
+          )}
+
           {/* Instructions */}
-          <div className="w-full space-y-2">
-            <p className="text-[11px] font-semibold text-text-3">Cara Pembayaran:</p>
-            <ol className="text-[11px] text-text-3 space-y-1 list-decimal list-inside leading-relaxed">
-              <li>Buka aplikasi e-wallet atau m-banking Anda</li>
-              <li>Pilih menu Scan QR atau QRIS</li>
-              <li>Scan kode QR di atas</li>
-              <li>Konfirmasi dan selesaikan pembayaran</li>
-            </ol>
-          </div>
+          {status === "pending" && (
+            <div className="w-full space-y-2">
+              <p className="text-[11px] font-semibold text-text-3">Cara Pembayaran:</p>
+              <ol className="text-[11px] text-text-3 space-y-1 list-decimal list-inside leading-relaxed">
+                <li>Buka aplikasi e-wallet atau m-banking Anda</li>
+                <li>Pilih menu Scan QR atau QRIS</li>
+                <li>Scan kode QR di atas</li>
+                <li>Konfirmasi dan selesaikan pembayaran</li>
+              </ol>
+            </div>
+          )}
+
+          {/* Success action */}
+          {status === "success" && (
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-2.5 rounded-xl bg-primary-1 text-white text-[13px] font-semibold hover:bg-primary-2 transition-all shadow-lg shadow-primary-1/20 active:scale-[0.98]"
+            >
+              Kembali ke Dashboard
+            </button>
+          )}
         </div>
 
         {/* Footer */}
@@ -258,9 +387,9 @@ export default function SubscriptionPage() {
   const [error, setError] = useState("");
 
   // Modal states
-  const [confirmPlan, setConfirmPlan] = useState(null); // Plan object for modal 1
-  const [paymentPlan, setPaymentPlan] = useState(null); // Plan object for modal 2
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [confirmPlan, setConfirmPlan] = useState(null);       // Plan object for confirm modal
+  const [paymentPlan, setPaymentPlan] = useState(null);       // Plan object for payment modal
+  const [transactionData, setTransactionData] = useState(null); // Real API response data
 
   const currentSub = user?.membership?.subscription;
   const currentSubId = currentSub?.id;
@@ -271,9 +400,7 @@ export default function SubscriptionPage() {
     const fetchPlans = async () => {
       try {
         const res = await apiFetch.get("/subscriptions");
-        const sorted = (res.data || []).sort(
-          (a, b) => (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99)
-        );
+        const sorted = (res.data || []).sort((a, b) => (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99));
         setPlans(sorted);
       } catch (err) {
         setError("Gagal memuat data paket. Silakan coba lagi.");
@@ -287,15 +414,15 @@ export default function SubscriptionPage() {
   // Modal flow
   const handleUpgradeClick = (plan) => setConfirmPlan(plan);
 
-  const handleConfirm = (method) => {
-    setPaymentMethod(method);
+  const handleConfirm = (method, apiResponseData) => {
+    setTransactionData(apiResponseData);
     setPaymentPlan(confirmPlan);
     setConfirmPlan(null);
   };
 
   const handlePaymentClose = () => {
     setPaymentPlan(null);
-    setPaymentMethod("");
+    setTransactionData(null);
   };
 
   return (
@@ -317,7 +444,8 @@ export default function SubscriptionPage() {
               </span>
             </div>
             <p className="text-text-3 text-[12px]">
-              Billing cycle: Monthly · Next billing: {formatDate(user?.membership?.expired_at)} · {formatRupiah(currentSub?.price)}/month
+              Billing cycle: Monthly · Next billing: {formatDate(user?.membership?.expired_at)} ·{" "}
+              {formatRupiah(currentSub?.price)}/month
             </p>
           </div>
 
@@ -376,10 +504,7 @@ export default function SubscriptionPage() {
               else if (!isUpgrade) buttonLabel = "Downgrade";
 
               return (
-                <div
-                  key={plan.id}
-                  className={`relative overflow-hidden rounded-2xl p-8 flex flex-col ${style.card}`}
-                >
+                <div key={plan.id} className={`relative overflow-hidden rounded-2xl p-8 flex flex-col ${style.card}`}>
                   {/* Ribbon */}
                   {style.ribbon && (
                     <div
@@ -416,8 +541,8 @@ export default function SubscriptionPage() {
                           feature.unlimited
                             ? "Unlimited"
                             : feature.limit_value
-                            ? `Limit: ${feature.limit_value.toLocaleString("id-ID")}`
-                            : null
+                              ? `Limit: ${feature.limit_value.toLocaleString("id-ID")}`
+                              : null
                         }
                         isLast={idx === plan.features.length - 1}
                       />
@@ -440,9 +565,7 @@ export default function SubscriptionPage() {
                       {buttonLabel}
                     </button>
                   ) : (
-                    <button
-                      className="w-full py-[10px] px-5 rounded-lg text-[13px] font-medium text-center border border-bg-3 text-text-3 hover:bg-bg-3 transition-colors"
-                    >
+                    <button className="w-full py-[10px] px-5 rounded-lg text-[13px] font-medium text-center border border-bg-3 text-text-3 hover:bg-bg-3 transition-colors">
                       {buttonLabel}
                     </button>
                   )}
@@ -455,19 +578,11 @@ export default function SubscriptionPage() {
 
       {/* ── Modals ────────────────────────────────────────────────────────── */}
       {confirmPlan && (
-        <ConfirmModal
-          plan={confirmPlan}
-          onConfirm={handleConfirm}
-          onClose={() => setConfirmPlan(null)}
-        />
+        <ConfirmModal plan={confirmPlan} onConfirm={handleConfirm} onClose={() => setConfirmPlan(null)} />
       )}
 
-      {paymentPlan && (
-        <PaymentModal
-          plan={paymentPlan}
-          method={paymentMethod}
-          onClose={handlePaymentClose}
-        />
+      {paymentPlan && transactionData && (
+        <PaymentModal plan={paymentPlan} transactionData={transactionData} onClose={handlePaymentClose} />
       )}
     </>
   );

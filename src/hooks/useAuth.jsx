@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getCookie, removeCookie } from "@/utils/cookie";
 
@@ -66,8 +66,33 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const logout = useCallback(async () => {
+    try {
+      const token = getCookie("userAccessToken");
+
+      // Revoke token di server
+      if (token) {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch {
+      // Tetap lanjut logout meskipun API call gagal
+    } finally {
+      removeCookie("userAccessToken");
+      setUser(null);
+      setTwoFactorRequired(false);
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, twoFactorRequired, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, twoFactorRequired, checkAuth, logout }}>
       {loading ? <div className="flex items-center justify-center min-h-screen">Loading...</div> : children}
     </AuthContext.Provider>
   );

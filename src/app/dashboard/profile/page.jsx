@@ -44,12 +44,13 @@ function Toggle({ enabled, onToggle }) {
 }
 
 // ─── Field Input ──────────────────────────────────────────────────────────────
-function Field({ label, ...props }) {
+function Field({ label, value, ...props }) {
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && <label className="text-[12px] font-medium text-text-3">{label}</label>}
       <input
         className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all duration-300 bg-bg-1 border border-bg-3 text-text-1 focus:border-primary-1/60 focus:ring-2 focus:ring-primary-1/10"
+        value={value ?? ""}
         {...props}
       />
     </div>

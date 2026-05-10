@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SyntheraIcon from "@/app/icon.png";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Home,
   CreditCard,
@@ -15,6 +16,7 @@ import {
   Users,
   Info,
   X,
+  LogOut,
 } from "lucide-react";
 
 /**
@@ -50,9 +52,15 @@ export const MEMBER_ALLOWED_ROUTES = [
  */
 export default function DashboardSidebar({ isOpen = false, onClose, userRole = "MEMBER" }) {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   // Filter nav items based on role
   const filteredItems = NAV_ITEMS.filter((item) => item.roles.includes(userRole));
+
+  const handleLogout = async () => {
+    if (!window.confirm("Apakah Anda yakin ingin logout?")) return;
+    await logout();
+  };
 
   return (
     <>
@@ -148,6 +156,22 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
               );
             })}
           </nav>
+        </div>
+
+        {/* ── Logout button ─────────────────────────────────────────────── */}
+        <div className="px-3 pb-6 pt-2 border-t border-[#1A1A24]">
+          <button
+            onClick={handleLogout}
+            className="
+              flex items-center gap-3 w-full px-4 py-2.5 rounded-xl
+              border border-transparent
+              text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20
+              transition-all duration-200 cursor-pointer
+            "
+          >
+            <LogOut size={18} strokeWidth={1.75} className="text-[#6B7280]" />
+            <span className="font-medium text-[13px]">Logout</span>
+          </button>
         </div>
       </aside>
     </>
