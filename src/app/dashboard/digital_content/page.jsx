@@ -3,7 +3,8 @@
 import { useState } from "react";
 import DashboardSidebar from "@/components/organisms/DashboardSidebar";
 import DashboardNavbar from "@/components/organisms/DashboardNavbar";
-import { Search, ChevronDown, File, Download } from "lucide-react";
+import { Search, ChevronDown, File, Download, Plus, Check, Loader2, Edit3, Trash2 } from "lucide-react";
+import ContentModal from "@/components/organisms/ContentModal";
 
 const CONTENT_ITEMS = [
   {
@@ -52,14 +53,57 @@ const CONTENT_ITEMS = [
 
 export default function DigitalContentPage() {
   const [search, setSearch] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [items, setItems] = useState(CONTENT_ITEMS);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingContent, setEditingContent] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSave = (data) => {
+    if (editingContent) {
+      setItems(items.map((item) => (item.id === editingContent.id ? { ...item, ...data } : item)));
+      showToast("Content updated successfully!");
+    } else {
+      const newItem = {
+        ...data,
+        id: items.length + 1,
+        gradient: "from-[#2A1B38] to-[#171321]", // Default gradient
+      };
+      setItems([newItem, ...items]);
+      showToast("Content created successfully!");
+    }
+    setEditingContent(null);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this content?")) {
+      setItems(items.filter((item) => item.id !== id));
+      showToast("Content deleted successfully!");
+    }
+  };
 
   return (
     <>
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-[26px] font-bold mb-1.5">Digital Content</h1>
-        <p className="text-text-3 text-[13px]">Browse and access your premium content library.</p>
+      <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-[26px] font-bold mb-1.5">Digital Content</h1>
+          <p className="text-text-3 text-[13px]">Browse and manage your premium content library.</p>
+        </div>
+        <button
+          onClick={() => {
+            setEditingContent(null);
+            setIsModalOpen(true);
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]"
+        >
+          <Plus size={16} />
+          Add Content
+        </button>
       </header>
 
       {/* Filters Area */}
@@ -84,7 +128,7 @@ export default function DigitalContentPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {CONTENT_ITEMS.map((item) => (
+        {items.filter(i => i.title.toLowerCase().includes(search.toLowerCase())).map((item) => (
           <div
             key={item.id}
             className="bg-bg-2 border border-bg-3 rounded-[20px] overflow-hidden flex flex-col group hover:border-bg-4 hover:shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition-all duration-300"
@@ -104,15 +148,51 @@ export default function DigitalContentPage() {
                 <Badge tier={item.tier} />
               </div>
 
-              <div className="mt-auto">
-                <button className="w-full h-[40px] flex items-center gap-2.5 px-4 rounded-xl bg-transparent border border-primary-1/20 text-primary-3 text-[13px] font-bold hover:bg-primary-1/10 hover:border-primary-1/30 transition-all">
-                  <Download size={15} /> Access
-                </button>
+                <div className="flex gap-2 w-full mt-auto">
+                  <button className="flex-1 h-[40px] flex items-center justify-center gap-2.5 px-4 rounded-xl bg-transparent border border-[#1A1A24] text-text-2 text-[13px] font-bold hover:bg-bg-3 hover:text-white transition-all">
+                    <Download size={15} /> Access
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setEditingContent(item);
+                      setIsModalOpen(true);
+                    }}
+                    className="w-10 h-[40px] flex items-center justify-center rounded-xl bg-[#13131A] border border-[#1A1A24] text-[#6B7280] hover:text-primary-3 hover:border-primary-1/30 transition-all"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(item.id)}
+                    className="w-10 h-[40px] flex items-center justify-center rounded-xl bg-[#13131A] border border-[#1A1A24] text-[#6B7280] hover:text-red-400 hover:border-red-500/30 transition-all"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <ContentModal 
+        isOpen={isModalOpen} 
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingContent(null);
+        }} 
+        onSave={handleSave}
+        content={editingContent}
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#0D0D12] border border-emerald-500/30 text-emerald-400 text-[13px] font-semibold shadow-2xl animate-in slide-in-from-right-10 duration-300">
+          <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <Check size={12} />
+          </div>
+          {toast}
+        </div>
+      )}
     </>
   );
 }
