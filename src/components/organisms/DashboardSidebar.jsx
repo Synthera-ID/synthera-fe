@@ -19,11 +19,13 @@ import {
   X,
   LogOut,
   Settings,
+  BookOpen,
 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["ADMIN", "MEMBER"] },
+  { label: "Course", href: "/dashboard/course", icon: BookOpen, roles: ["ADMIN", "MEMBER"] },
   { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["ADMIN", "MEMBER"] },
   { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
   { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
@@ -36,6 +38,7 @@ const NAV_ITEMS = [
 
 export const MEMBER_ALLOWED_ROUTES = [
   "/dashboard",
+  "/dashboard/course",
   "/dashboard/profile",
   "/dashboard/subscription",
   "/dashboard/api_keys",
@@ -74,8 +77,10 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 w-[260px] bg-bg-2 border-r border-bg-3 z-50 transform lg:transform-none transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed lg:static inset-y-0 left-0 bg-bg-2 border-r border-bg-3 z-50 transition-all duration-300 ease-in-out ${
+          isOpen 
+            ? "w-[260px] translate-x-0" 
+            : "-translate-x-full lg:translate-x-0 lg:w-[80px]"
         }`}
       >
         <div className="flex flex-col h-full">
@@ -83,7 +88,9 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           <div className="h-[60px] px-6 border-b border-bg-3 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-3">
               <Image src={SyntheraIcon} alt="Synthera" width={28} height={28} className="rounded-lg" />
-              <span className="font-bold text-text-1 tracking-tight">Synthera</span>
+              <span className={`font-bold text-text-1 tracking-tight transition-opacity duration-300 ${isOpen ? "opacity-100" : "lg:opacity-0 lg:hidden"}`}>
+                Synthera
+              </span>
             </Link>
             <button onClick={onClose} className="lg:hidden text-text-3 hover:text-text-1 transition-colors">
               <X size={20} />
@@ -107,10 +114,14 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
                         ? "bg-primary-1/10 text-primary-2 dark:text-primary-3 border border-primary-1/20 shadow-sm dark:shadow-[0_0_12px_rgba(139,92,246,0.15)]"
                         : "text-text-2 hover:text-text-1 hover:bg-bg-3 border border-transparent"
                     }
+                    ${!isOpen && "lg:justify-center lg:px-0"}
                   `}
+                  title={!isOpen ? item.label : ""}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                  {item.label}
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                  <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "lg:opacity-0 lg:hidden"}`}>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -120,10 +131,13 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           <div className="p-3 border-t border-bg-3">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors ${!isOpen && "lg:justify-center lg:px-0"}`}
+              title={!isOpen ? "Sign Out" : ""}
             >
-              <LogOut size={18} />
-              Sign Out
+              <LogOut size={18} className="shrink-0" />
+              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "lg:opacity-0 lg:hidden"}`}>
+                Sign Out
+              </span>
             </button>
           </div>
         </div>
