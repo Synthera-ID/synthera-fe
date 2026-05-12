@@ -9,7 +9,6 @@ import {
   Clock, Users, Star, BookOpen, Play, ChevronRight,
   CheckCircle, BarChart3, Shield, Zap, Award, ArrowLeft
 } from 'lucide-react';
-import CourseAccordion from '@/components/organisms/CourseAccordion';
 
 const courses = [
   {
@@ -385,7 +384,27 @@ export default function CourseDetailPage({ params }) {
           {/* Curriculum */}
           <div>
             <h2 className="text-lg font-bold text-text-1 mb-5">Kurikulum</h2>
-            <CourseAccordion sections={course.curriculum} />
+            <div className="space-y-3">
+              {course.curriculum.map((section, i) => (
+                <div
+                  key={i}
+                  className="bg-bg-2 border border-bg-3 rounded-xl px-5 py-4 flex items-center justify-between hover:border-primary-1/30 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-primary-1/10 flex items-center justify-center text-[11px] font-bold text-primary-3">
+                      {i + 1}
+                    </div>
+                    <span className="text-sm font-medium text-text-1 group-hover:text-primary-3 transition-colors">
+                      {section.section}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[11px] text-text-3 flex-shrink-0 ml-4">
+                    <span>{section.lessons} pelajaran</span>
+                    <span>{section.duration}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Tags */}

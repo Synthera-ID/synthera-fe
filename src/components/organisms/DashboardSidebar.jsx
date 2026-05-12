@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import LogoutModal from "./LogoutModal";
 import SyntheraIcon from "@/app/icon.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -19,57 +18,19 @@ import {
   Info,
   X,
   LogOut,
-  BookOpen,
   Settings,
-  ShieldCheck,
-  DollarSign,
-  ChevronDown,
 } from "lucide-react";
 
-/**
- * NAV_GROUPS with role-based access
- */
-const NAV_GROUPS = [
-  {
-    label: "MAIN MENU",
-    items: [
-      { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["ADMIN", "MEMBER"] },
-      { label: "Course", href: "/dashboard/course", icon: BookOpen, roles: ["ADMIN", "MEMBER"] },
-      { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["ADMIN", "MEMBER"] },
-    ],
-  },
-  {
-    label: "SUBSCRIPTION",
-    items: [
-      { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
-      { label: "Subscription History", href: "/dashboard/subscription_history", icon: Clock, roles: ["ADMIN", "MEMBER"] },
-    ],
-  },
-  {
-    label: "MANAGEMENT",
-    roles: ["ADMIN"],
-    items: [
-      { label: "User Management", href: "/dashboard/user_management", icon: Users, roles: ["ADMIN"] },
-      { label: "Payment Management", href: "/dashboard/payment_management", icon: DollarSign, roles: ["ADMIN"] },
-      { label: "Transaction Management", href: "/dashboard/payment_history", icon: BarChart2, roles: ["ADMIN"] },
-      { label: "Subscription Management", href: "/dashboard/subscription_management", icon: CreditCard, roles: ["ADMIN"] },
-      { label: "Membership Management", href: "/dashboard/membership_management", icon: ShieldCheck, roles: ["ADMIN"] },
-      { label: "Digital Content", href: "/dashboard/digital_content", icon: Grid, roles: ["ADMIN"] },
-    ],
-  },
-  {
-    label: "DEVELOPER",
-    items: [
-      { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
-      { label: "API Usage", href: "/dashboard/api_usage", icon: BarChart2, roles: ["ADMIN", "MEMBER"] },
-    ],
-  },
-  {
-    label: "SYSTEM",
-    items: [
-      { label: "General Info", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] },
-    ],
-  },
+const NAV_ITEMS = [
+  { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["ADMIN", "MEMBER"] },
+  { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["ADMIN", "MEMBER"] },
+  { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
+  { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
+  { label: "API Usage", href: "/dashboard/api_usage", icon: BarChart2, roles: ["ADMIN", "MEMBER"] },
+  { label: "User Management", href: "/dashboard/user_management", icon: Users, roles: ["ADMIN"] },
+  { label: "Payment History", href: "/dashboard/payment_history", icon: BarChart2, roles: ["ADMIN"] },
+  { label: "Digital Content", href: "/dashboard/digital_content", icon: Grid, roles: ["ADMIN"] },
+  { label: "General Information", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] },
 ];
 
 export const MEMBER_ALLOWED_ROUTES = [
@@ -85,11 +46,10 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
   const router = useRouter();
   const { logout } = useAuth();
 
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-
   const handleLogout = async () => {
-    setIsLogoutModalOpen(false);
-    await logout();
+    if (window.confirm("Are you sure you want to logout?")) {
+      await logout();
+    }
   };
 
   const filteredItems = NAV_ITEMS.filter((item) => item.roles.includes(userRole));
@@ -123,42 +83,27 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 custom-scrollbar">
-            {NAV_GROUPS.map((group) => {
-              const filteredItems = group.items.filter((item) => item.roles.includes(userRole));
-              if (filteredItems.length === 0) return null;
-              if (group.roles && !group.roles.includes(userRole)) return null;
+          <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
+            {filteredItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
 
               return (
-                <div key={group.label} className="space-y-2">
-                  <h4 className="px-3 text-[11px] font-bold text-[#4B5563] uppercase tracking-[0.1em]">
-                    {group.label}
-                  </h4>
-                  <div className="space-y-1">
-                    {filteredItems.map((item) => {
-                      const isActive = pathname === item.href;
-                      const Icon = item.icon;
-
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={`
-                            flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200
-                            ${
-                              isActive
-                                ? "bg-primary-1/10 text-primary-3 border border-primary-1/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
-                                : "text-[#9CA3AF] hover:text-white hover:bg-[#13131A] border border-transparent"
-                            }
-                          `}
-                        >
-                          <Icon size={17} strokeWidth={isActive ? 2.5 : 2} />
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all duration-200
+                    ${
+                      isActive
+                        ? "bg-primary-1/10 text-primary-3 border border-primary-1/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+                        : "text-[#9CA3AF] hover:text-white hover:bg-[#13131A] border border-transparent"
+                    }
+                  `}
+                >
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  {item.label}
+                </Link>
               );
             })}
           </nav>
@@ -166,7 +111,7 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           {/* Footer */}
           <div className="p-3 border-t border-[#1A1A24]">
             <button
-              onClick={() => setIsLogoutModalOpen(true)}
+              onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <LogOut size={18} />
@@ -175,12 +120,6 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           </div>
         </div>
       </aside>
-
-      <LogoutModal 
-        isOpen={isLogoutModalOpen} 
-        onClose={() => setIsLogoutModalOpen(false)} 
-        onConfirm={handleLogout} 
-      />
     </>
   );
 }

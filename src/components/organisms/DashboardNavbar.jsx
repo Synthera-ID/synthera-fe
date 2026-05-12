@@ -3,11 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, ChevronRight, User, Users, Info, LogOut, Sun, Moon } from "lucide-react";
+import { Menu, ChevronRight, User, Users, Info, LogOut } from "lucide-react";
 import Image from "next/image";
-import { useTheme } from "next-themes";
-import { useAuth } from "@/hooks/useAuth";
-import LogoutModal from "./LogoutModal";
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 const LABEL_MAP = {
@@ -15,13 +12,9 @@ const LABEL_MAP = {
   api_keys: "API Keys",
   api_usage: "API Usage",
   digital_content: "Digital Content",
-  transaction_management: "Transaction Management",
-  payment_management: "Payment Management",
-  subscription_management: "Subscription Management",
-  membership_management: "Membership Management",
+  payment_history: "Payment History",
   profile: "Profile",
   subscription: "Subscription",
-  subscription_history: "Subscription History",
   user_management: "User Management",
   general_information: "General Information",
 };
@@ -43,15 +36,6 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const { logout } = useAuth();
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -64,9 +48,9 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    setIsLogoutModalOpen(false);
-    await logout();
+  const handleLogout = () => {
+    setDropdownOpen(false);
+    router.push("/login");
   };
 
   return (
@@ -110,23 +94,8 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Theme Toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="
-            w-9 h-9 flex items-center justify-center rounded-lg
-            bg-[#13131A] border border-[#1A1A24]
-            text-[#6B7280]
-            hover:text-primary-3 hover:border-primary-1/40 hover:bg-primary-1/10
-            transition-all duration-200
-          "
-        >
-          {mounted && (theme === "dark" ? <Sun size={17} /> : <Moon size={17} />)}
-        </button>
-
-        {/* ── Right: Avatar Dropdown ─────────────────────────────────────────── */}
-        <div className="relative" ref={dropdownRef}>
+      {/* ── Right: Avatar Dropdown ─────────────────────────────────────────── */}
+      <div className="relative" ref={dropdownRef}>
         {/* Trigger button */}
         <button
           id="avatar-dropdown-btn"
@@ -198,10 +167,7 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
             </Link>
 
             <button
-              onClick={() => {
-                setDropdownOpen(false);
-                setIsLogoutModalOpen(true);
-              }}
+              onClick={handleLogout}
               className="
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                 text-[13px] text-[#9CA3AF]
@@ -215,12 +181,6 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
           </div>
         </div>
       </div>
-      
-      <LogoutModal 
-        isOpen={isLogoutModalOpen} 
-        onClose={() => setIsLogoutModalOpen(false)} 
-        onConfirm={handleLogout} 
-      />
     </header>
   );
 }
