@@ -20,6 +20,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["ADMIN", "MEMBER"] },
@@ -45,11 +46,18 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      await logout();
-    }
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    setIsLogoutModalOpen(false);
+    setIsLoggingOut(false);
   };
 
   const filteredItems = NAV_ITEMS.filter((item) => item.roles.includes(userRole));
@@ -120,6 +128,19 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           </div>
         </div>
       </aside>
+
+      <ConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onCancel={() => setIsLogoutModalOpen(false)}
+        onConfirm={confirmLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You will need to login again to access your dashboard."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isLoggingOut}
+        icon={LogOut}
+      />
     </>
   );
 }

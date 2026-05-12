@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, ChevronRight, User, Users, Info, LogOut } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/atoms/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 const LABEL_MAP = {
@@ -34,8 +36,11 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
   const pathname = usePathname();
   const router = useRouter();
   const breadcrumbs = useBreadcrumbs(pathname);
+  const { logout } = useAuth();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown on outside click
@@ -51,7 +56,14 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
 
   const handleLogout = () => {
     setDropdownOpen(false);
-    router.push("/login");
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    setIsLogoutModalOpen(false);
+    setIsLoggingOut(false);
   };
 
   return (
@@ -186,6 +198,19 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
           </div>
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onCancel={() => setIsLogoutModalOpen(false)}
+        onConfirm={confirmLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You will need to login again to access your dashboard."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isLoggingOut}
+        icon={LogOut}
+      />
     </header>
   );
 }

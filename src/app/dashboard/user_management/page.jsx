@@ -7,6 +7,7 @@ import {
   UserCheck, UserX, Crown, Loader2,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ROLE_STYLES = {
@@ -55,6 +56,7 @@ export default function UserManagementPage() {
   const [activeMenu, setActiveMenu] = useState(null);
   const [modalUser, setModalUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [notification, setNotification] = useState(null);
 
   // Fetch users
@@ -93,14 +95,17 @@ export default function UserManagementPage() {
 
   // ── Delete ──
   async function handleDelete(id) {
+    setIsDeleting(true);
     try {
       await apiFetch.delete(`/admin/users/${id}`);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       showNotification("User deleted successfully.");
+      setDeleteConfirm(null);
     } catch (err) {
       showNotification(err?.data?.message || "Gagal menghapus user.", "error");
+    } finally {
+      setIsDeleting(false);
     }
-    setDeleteConfirm(null);
   }
 
   // ── Save (create/update) ──
@@ -314,7 +319,17 @@ export default function UserManagementPage() {
       {/* Overlays */}
       {activeMenu && <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />}
       {modalUser && <EditUserModal user={modalUser} onClose={() => setModalUser(null)} onSave={handleSave} />}
-      {deleteConfirm && <DeleteConfirmModal user={deleteConfirm} onCancel={() => setDeleteConfirm(null)} onConfirm={() => handleDelete(deleteConfirm.id)} />}
+      <ConfirmationModal
+        isOpen={!!deleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => handleDelete(deleteConfirm.id)}
+        title="Delete User?"
+        message={deleteConfirm ? `Are you sure you want to delete ${deleteConfirm.name}? This action cannot be undone.` : ""}
+        confirmText="Delete"
+        variant="danger"
+        icon={Trash2}
+        isLoading={isDeleting}
+      />
 
       {/* Toast */}
       {notification && (
@@ -433,34 +448,6 @@ function EditUserModal({ user, onClose, onSave }) {
           <button onClick={handleSubmit} disabled={!form.name.trim() || !form.email.trim() || saving}
             className="flex-1 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-semibold transition-all shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2">
             {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : isNew ? "Add User" : "Save Changes"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
-function DeleteConfirmModal({ user, onCancel, onConfirm }) {
-  const [deleting, setDeleting] = useState(false);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-sm shadow-2xl text-center">
-        <div className="w-14 h-14 rounded-2xl bg-rose-500/15 flex items-center justify-center mx-auto mb-5">
-          <Trash2 size={26} className="text-rose-400" />
-        </div>
-        <h2 className="text-[18px] font-bold mb-2">Delete User?</h2>
-        <p className="text-text-3 text-[13px] mb-6">
-          Are you sure you want to delete <span className="text-text-1 font-semibold">{user.name}</span>? This action cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all">
-            Cancel
-          </button>
-          <button onClick={async () => { setDeleting(true); await onConfirm(); setDeleting(false); }} disabled={deleting}
-            className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 disabled:opacity-50 text-white text-[13px] font-semibold transition-all shadow-[0_4px_20px_rgba(239,68,68,0.25)] flex items-center justify-center gap-2">
-            {deleting ? <><Loader2 size={14} className="animate-spin" /> Deleting...</> : "Delete"}
           </button>
         </div>
       </div>
