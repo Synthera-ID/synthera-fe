@@ -9,6 +9,7 @@ import {
   Clock, Users, Star, BookOpen, Play, ChevronRight,
   CheckCircle, BarChart3, Shield, Zap, Award, ArrowLeft
 } from 'lucide-react';
+import CourseAccordion from '@/components/organisms/CourseAccordion';
 
 const courses = [
   {
@@ -40,12 +41,48 @@ const courses = [
       'State management dengan Redux Toolkit',
     ],
     curriculum: [
-      { section: 'Modul 1: Fondasi JavaScript Modern', lessons: 8, duration: '6 jam' },
-      { section: 'Modul 2: React dari Dasar hingga Advanced', lessons: 14, duration: '12 jam' },
-      { section: 'Modul 3: Backend dengan Node.js & Express', lessons: 10, duration: '10 jam' },
-      { section: 'Modul 4: MongoDB & Mongoose', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 5: Authentication & Security', lessons: 6, duration: '6 jam' },
-      { section: 'Modul 6: Deploy & CI/CD', lessons: 6, duration: '6 jam' },
+      { 
+        section: 'Modul 1: Fondasi JavaScript Modern', 
+        lessons: 8, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Pelajari dasar-dasar JavaScript modern mulai dari variable, data types, hingga arrow functions dan ES6+ features.'
+      },
+      { 
+        section: 'Modul 2: React dari Dasar hingga Advanced', 
+        lessons: 14, 
+        duration: '12 jam',
+        videoUrl: '#',
+        description: 'Membangun UI yang interaktif menggunakan React Hooks, Context API, dan best practices dalam pengembangan frontend.'
+      },
+      { 
+        section: 'Modul 3: Backend dengan Node.js & Express', 
+        lessons: 10, 
+        duration: '10 jam',
+        videoUrl: '#',
+        description: 'Belajar membuat RESTful API yang aman dan scalable menggunakan Express.js dan Node.js.'
+      },
+      { 
+        section: 'Modul 4: MongoDB & Mongoose', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Manajemen database NoSQL dengan MongoDB dan Mongoose untuk menyimpan data aplikasi secara efisien.'
+      },
+      { 
+        section: 'Modul 5: Authentication & Security', 
+        lessons: 6, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Implementasi JWT Authentication, hashing password, dan pengamanan API dari serangan umum.'
+      },
+      { 
+        section: 'Modul 6: Deploy & CI/CD', 
+        lessons: 6, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Proses deployment aplikasi ke cloud service seperti Vercel and Railway dengan CI/CD pipeline.'
+      },
     ],
   },
   {
@@ -77,11 +114,41 @@ const courses = [
       'Usability testing & iterasi',
     ],
     curriculum: [
-      { section: 'Modul 1: Dasar-dasar UX Design', lessons: 6, duration: '4 jam' },
-      { section: 'Modul 2: User Research & Personas', lessons: 8, duration: '6 jam' },
-      { section: 'Modul 3: Wireframing & Lo-fi Prototyping', lessons: 8, duration: '7 jam' },
-      { section: 'Modul 4: UI Design dengan Figma', lessons: 10, duration: '9 jam' },
-      { section: 'Modul 5: Usability Testing', lessons: 6, duration: '6 jam' },
+      { 
+        section: 'Modul 1: Dasar-dasar UX Design', 
+        lessons: 6, 
+        duration: '4 jam',
+        videoUrl: '#',
+        description: 'Memahami dasar-dasar User Experience dan mengapa itu sangat penting dalam produk digital.'
+      },
+      { 
+        section: 'Modul 2: User Research & Personas', 
+        lessons: 8, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Teknik melakukan riset pengguna dan membuat user persona yang akurat.'
+      },
+      { 
+        section: 'Modul 3: Wireframing & Lo-fi Prototyping', 
+        lessons: 8, 
+        duration: '7 jam',
+        videoUrl: '#',
+        description: 'Membuat kerangka aplikasi (wireframe) dan prototype dengan fidelitas rendah.'
+      },
+      { 
+        section: 'Modul 4: UI Design dengan Figma', 
+        lessons: 10, 
+        duration: '9 jam',
+        videoUrl: '#',
+        description: 'Implementasi visual design, typography, dan color theory menggunakan Figma.'
+      },
+      { 
+        section: 'Modul 5: Usability Testing', 
+        lessons: 6, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Menguji hasil desain ke pengguna nyata dan melakukan iterasi berdasarkan feedback.'
+      },
     ],
   },
   {
@@ -113,12 +180,48 @@ const courses = [
       'Model deployment dengan FastAPI',
     ],
     curriculum: [
-      { section: 'Modul 1: Python untuk Data Science', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 2: Statistik & Eksplorasi Data', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 3: Supervised Learning', lessons: 10, duration: '12 jam' },
-      { section: 'Modul 4: Neural Networks', lessons: 10, duration: '14 jam' },
-      { section: 'Modul 5: Deep Learning Projects', lessons: 8, duration: '10 jam' },
-      { section: 'Modul 6: Deployment', lessons: 6, duration: '8 jam' },
+      { 
+        section: 'Modul 1: Python untuk Data Science', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Pengenalan Python, NumPy, dan Pandas untuk manipulasi data.'
+      },
+      { 
+        section: 'Modul 2: Statistik & Eksplorasi Data', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Dasar statistik dan Exploratory Data Analysis (EDA) untuk memahami data.'
+      },
+      { 
+        section: 'Modul 3: Supervised Learning', 
+        lessons: 10, 
+        duration: '12 jam',
+        videoUrl: '#',
+        description: 'Implementasi algoritma regresi dan klasifikasi.'
+      },
+      { 
+        section: 'Modul 4: Neural Networks', 
+        lessons: 10, 
+        duration: '14 jam',
+        videoUrl: '#',
+        description: 'Membangun arsitektur neural network dasar menggunakan TensorFlow.'
+      },
+      { 
+        section: 'Modul 5: Deep Learning Projects', 
+        lessons: 8, 
+        duration: '10 jam',
+        videoUrl: '#',
+        description: 'Studi kasus pengenalan gambar dan klasifikasi teks.'
+      },
+      { 
+        section: 'Modul 6: Deployment', 
+        lessons: 6, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Cara deploy model ML ke production menggunakan FastAPI.'
+      },
     ],
   },
   {
@@ -150,11 +253,41 @@ const courses = [
       'Analytics & reporting dengan GA4',
     ],
     curriculum: [
-      { section: 'Modul 1: Fondasi Digital Marketing', lessons: 6, duration: '4 jam' },
-      { section: 'Modul 2: SEO & Content Strategy', lessons: 8, duration: '6 jam' },
-      { section: 'Modul 3: Paid Advertising', lessons: 8, duration: '7 jam' },
-      { section: 'Modul 4: Social Media Marketing', lessons: 6, duration: '5 jam' },
-      { section: 'Modul 5: Analytics & Optimization', lessons: 4, duration: '2 jam' },
+      { 
+        section: 'Modul 1: Fondasi Digital Marketing', 
+        lessons: 6, 
+        duration: '4 jam',
+        videoUrl: '#',
+        description: 'Memahami ekosistem digital marketing dan customer journey.'
+      },
+      { 
+        section: 'Modul 2: SEO & Content Strategy', 
+        lessons: 8, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Optimasi mesin pencari dan pembuatan konten yang menjual.'
+      },
+      { 
+        section: 'Modul 3: Paid Advertising', 
+        lessons: 8, 
+        duration: '7 jam',
+        videoUrl: '#',
+        description: 'Beriklan secara efektif di Google Ads dan Facebook/Instagram Ads.'
+      },
+      { 
+        section: 'Modul 4: Social Media Marketing', 
+        lessons: 6, 
+        duration: '5 jam',
+        videoUrl: '#',
+        description: 'Manajemen brand di berbagai platform media sosial.'
+      },
+      { 
+        section: 'Modul 5: Analytics & Optimization', 
+        lessons: 4, 
+        duration: '2 jam',
+        videoUrl: '#',
+        description: 'Membaca data analitik untuk meningkatkan performa campaign.'
+      },
     ],
   },
   {
@@ -186,11 +319,41 @@ const courses = [
       'Publish ke Play Store & App Store',
     ],
     curriculum: [
-      { section: 'Modul 1: Dart Programming', lessons: 8, duration: '6 jam' },
-      { section: 'Modul 2: Flutter Widgets & Layout', lessons: 10, duration: '10 jam' },
-      { section: 'Modul 3: State Management', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 4: Firebase Integration', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 5: Publishing', lessons: 4, duration: '4 jam' },
+      { 
+        section: 'Modul 1: Dart Programming', 
+        lessons: 8, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Dasar-dasar bahasa pemrograman Dart untuk Flutter.'
+      },
+      { 
+        section: 'Modul 2: Flutter Widgets & Layout', 
+        lessons: 10, 
+        duration: '10 jam',
+        videoUrl: '#',
+        description: 'Memahami widget tree dan cara membangun layout yang responsif.'
+      },
+      { 
+        section: 'Modul 3: State Management', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Mengelola state aplikasi dengan Provider atau Riverpod.'
+      },
+      { 
+        section: 'Modul 4: Firebase Integration', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Koneksi ke backend Firebase untuk database dan auth.'
+      },
+      { 
+        section: 'Modul 5: Publishing', 
+        lessons: 4, 
+        duration: '4 jam',
+        videoUrl: '#',
+        description: 'Langkah-langkah merilis aplikasi ke Play Store dan App Store.'
+      },
     ],
   },
   {
@@ -222,11 +385,41 @@ const courses = [
       'Incident response & forensics',
     ],
     curriculum: [
-      { section: 'Modul 1: Fondasi Networking & Linux', lessons: 8, duration: '6 jam' },
-      { section: 'Modul 2: Recon & OSINT', lessons: 6, duration: '5 jam' },
-      { section: 'Modul 3: Web App Pentesting', lessons: 10, duration: '10 jam' },
-      { section: 'Modul 4: Network Security', lessons: 8, duration: '8 jam' },
-      { section: 'Modul 5: Forensics & Incident Response', lessons: 6, duration: '7 jam' },
+      { 
+        section: 'Modul 1: Fondasi Networking & Linux', 
+        lessons: 8, 
+        duration: '6 jam',
+        videoUrl: '#',
+        description: 'Pemahaman mendalam tentang jaringan dan sistem operasi Linux.'
+      },
+      { 
+        section: 'Modul 2: Recon & OSINT', 
+        lessons: 6, 
+        duration: '5 jam',
+        videoUrl: '#',
+        description: 'Teknik pengumpulan informasi dan intelijen sumber terbuka.'
+      },
+      { 
+        section: 'Modul 3: Web App Pentesting', 
+        lessons: 10, 
+        duration: '10 jam',
+        videoUrl: '#',
+        description: 'Mencari celah keamanan pada aplikasi berbasis web.'
+      },
+      { 
+        section: 'Modul 4: Network Security', 
+        lessons: 8, 
+        duration: '8 jam',
+        videoUrl: '#',
+        description: 'Mengamankan infrastruktur jaringan dari berbagai ancaman.'
+      },
+      { 
+        section: 'Modul 5: Forensics & Incident Response', 
+        lessons: 6, 
+        duration: '7 jam',
+        videoUrl: '#',
+        description: 'Analisis serangan dan langkah penanganan insiden keamanan.'
+      },
     ],
   },
 ];
@@ -384,27 +577,7 @@ export default function CourseDetailPage({ params }) {
           {/* Curriculum */}
           <div>
             <h2 className="text-lg font-bold text-text-1 mb-5">Kurikulum</h2>
-            <div className="space-y-3">
-              {course.curriculum.map((section, i) => (
-                <div
-                  key={i}
-                  className="bg-bg-2 border border-bg-3 rounded-xl px-5 py-4 flex items-center justify-between hover:border-primary-1/30 transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-primary-1/10 flex items-center justify-center text-[11px] font-bold text-primary-3">
-                      {i + 1}
-                    </div>
-                    <span className="text-sm font-medium text-text-1 group-hover:text-primary-3 transition-colors">
-                      {section.section}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-[11px] text-text-3 flex-shrink-0 ml-4">
-                    <span>{section.lessons} pelajaran</span>
-                    <span>{section.duration}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CourseAccordion curriculum={course.curriculum} />
           </div>
 
           {/* Tags */}
