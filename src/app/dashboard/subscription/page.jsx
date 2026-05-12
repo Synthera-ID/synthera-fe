@@ -363,6 +363,8 @@ function PaymentModal({ plan, transactionData, onClose }) {
   );
 }
 
+import SubscriptionHistory from "@/components/organisms/SubscriptionHistory";
+
 // ─── Feature Item ─────────────────────────────────────────────────────────────
 function FeatureItem({ text, detail, isLast }) {
   return (
@@ -576,6 +578,9 @@ export default function SubscriptionPage() {
         )}
       </div>
 
+      {/* Subscription History */}
+      <SubscriptionHistory />
+
       {/* ── Modals ────────────────────────────────────────────────────────── */}
       {confirmPlan && (
         <ConfirmModal plan={confirmPlan} onConfirm={handleConfirm} onClose={() => setConfirmPlan(null)} />
@@ -587,3 +592,4 @@ export default function SubscriptionPage() {
     </>
   );
 }
+
