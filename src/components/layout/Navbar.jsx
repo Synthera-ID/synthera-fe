@@ -2,18 +2,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Sun, Moon, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/atoms/ThemeToggle";
+import { useTheme } from "next-themes";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("light");
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = mounted ? theme === "dark" : true;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,12 +70,7 @@ export default function Navbar() {
         {/* --- GRUP KANAN (Toggle + Menu + Login) --- */}
         <div className="flex items-center gap-6">
           {/* 1. Toggle Tema */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-lg border ${buttonStyles} transition-all cursor-pointer flex items-center justify-center`}
-          >
-            {isDarkMode ? <Moon size={15} /> : <Sun size={15} className="text-yellow-400" />}
-          </button>
+          <ThemeToggle />
 
           {/* 2. Tombol Hamburger / Menu Mobile */}
           <button

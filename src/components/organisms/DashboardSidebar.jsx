@@ -66,18 +66,18 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 w-[260px] bg-[#0D0D12] border-r border-[#1A1A24] z-50 transform lg:transform-none transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 w-[260px] bg-bg-2 border-r border-bg-3 z-50 transform lg:transform-none transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-[60px] px-6 border-b border-[#1A1A24] flex items-center justify-between">
+          <div className="h-[60px] px-6 border-b border-bg-3 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-3">
               <Image src={SyntheraIcon} alt="Synthera" width={28} height={28} className="rounded-lg" />
-              <span className="font-bold text-white tracking-tight">Synthera</span>
+              <span className="font-bold text-text-1 tracking-tight">Synthera</span>
             </Link>
-            <button onClick={onClose} className="lg:hidden text-[#6B7280] hover:text-white transition-colors">
+            <button onClick={onClose} className="lg:hidden text-text-3 hover:text-text-1 transition-colors">
               <X size={20} />
             </button>
           </div>
@@ -96,8 +96,8 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
                     flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all duration-200
                     ${
                       isActive
-                        ? "bg-primary-1/10 text-primary-3 border border-primary-1/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
-                        : "text-[#9CA3AF] hover:text-white hover:bg-[#13131A] border border-transparent"
+                        ? "bg-primary-1/10 text-primary-2 dark:text-primary-3 border border-primary-1/20 shadow-sm dark:shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+                        : "text-text-2 hover:text-text-1 hover:bg-bg-3 border border-transparent"
                     }
                   `}
                 >
@@ -109,10 +109,10 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           </nav>
 
           {/* Footer */}
-          <div className="p-3 border-t border-[#1A1A24]">
+          <div className="p-3 border-t border-bg-3">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <LogOut size={18} />
               Sign Out
