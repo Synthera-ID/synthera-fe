@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
+import LogoutModal from "./LogoutModal";
 import SyntheraIcon from "@/app/icon.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -17,22 +19,57 @@ import {
   Info,
   X,
   LogOut,
+  BookOpen,
+  Settings,
+  ShieldCheck,
+  DollarSign,
+  ChevronDown,
 } from "lucide-react";
 
 /**
- * NAV_ITEMS with role-based access
- * roles: which roles can see this item. ADMIN can access ALL.
+ * NAV_GROUPS with role-based access
  */
-const NAV_ITEMS = [
-  { label: "Dashboard",           href: "/dashboard",                      icon: Home,       roles: ["ADMIN", "MEMBER"] },
-  { label: "Profile",             href: "/dashboard/profile",              icon: User,       roles: ["ADMIN", "MEMBER"] },
-  { label: "Subscription",        href: "/dashboard/subscription",         icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
-  { label: "API Keys",            href: "/dashboard/api_keys",             icon: Key,        roles: ["ADMIN", "MEMBER"] },
-  { label: "API Usage",           href: "/dashboard/api_usage",            icon: BarChart2,  roles: ["ADMIN", "MEMBER"] },
-  { label: "Digital Content",     href: "/dashboard/digital_content",      icon: Grid,       roles: ["ADMIN"] },
-  { label: "Payment History",     href: "/dashboard/payment_history",      icon: Clock,      roles: ["ADMIN"] },
-  { label: "User Management",     href: "/dashboard/user_management",      icon: Users,      roles: ["ADMIN"] },
-  { label: "General Information", href: "/dashboard/general_information",  icon: Info,       roles: ["ADMIN"] },
+const NAV_GROUPS = [
+  {
+    label: "MAIN MENU",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["ADMIN", "MEMBER"] },
+      { label: "Courses", href: "/dashboard/course", icon: BookOpen, roles: ["ADMIN", "MEMBER"] },
+      { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["ADMIN", "MEMBER"] },
+    ],
+  },
+  {
+    label: "SUBSCRIPTION",
+    items: [
+      { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
+      { label: "History", href: "/dashboard/subscription_history", icon: Clock, roles: ["ADMIN", "MEMBER"] },
+    ],
+  },
+  {
+    label: "MANAGEMENT",
+    roles: ["ADMIN"],
+    items: [
+      { label: "User Management", href: "/dashboard/user_management", icon: Users, roles: ["ADMIN"] },
+      { label: "Payment Management", href: "/dashboard/payment_management", icon: DollarSign, roles: ["ADMIN"] },
+      { label: "Transaction Management", href: "/dashboard/transaction_management", icon: BarChart2, roles: ["ADMIN"] },
+      { label: "Subscription Management", href: "/dashboard/subscription_management", icon: CreditCard, roles: ["ADMIN"] },
+      { label: "Membership Management", href: "/dashboard/membership_management", icon: ShieldCheck, roles: ["ADMIN"] },
+      { label: "Digital Content", href: "/dashboard/digital_content", icon: Grid, roles: ["ADMIN"] },
+    ],
+  },
+  {
+    label: "DEVELOPER",
+    items: [
+      { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
+      { label: "API Usage", href: "/dashboard/api_usage", icon: BarChart2, roles: ["ADMIN", "MEMBER"] },
+    ],
+  },
+  {
+    label: "SYSTEM",
+    items: [
+      { label: "General Info", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] },
+    ],
+  },
 ];
 
 /** Routes accessible by MEMBER role */
@@ -53,12 +90,10 @@ export const MEMBER_ALLOWED_ROUTES = [
 export default function DashboardSidebar({ isOpen = false, onClose, userRole = "MEMBER" }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-
-  // Filter nav items based on role
-  const filteredItems = NAV_ITEMS.filter((item) => item.roles.includes(userRole));
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleLogout = async () => {
-    if (!window.confirm("Apakah Anda yakin ingin logout?")) return;
+    setIsLogoutModalOpen(false);
     await logout();
   };
 
@@ -121,38 +156,53 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
         </div>
 
         {/* ── Navigation ──────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="px-6 text-[10px] font-bold text-[#6B7280] tracking-widest mb-3">
-            {userRole === "ADMIN" ? "ADMIN PANEL" : "USER PANEL"}
-          </div>
-
-          <nav className="flex flex-col gap-0.5 px-3">
-            {filteredItems.map(({ label, href, icon: Icon }) => {
-              const isActive =
-                href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(href);
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+          <nav className="flex flex-col gap-6 px-3 py-4">
+            {NAV_GROUPS.map((group) => {
+              // Filter items in group based on userRole
+              const visibleItems = group.items.filter((item) => item.roles.includes(userRole));
+              
+              if (visibleItems.length === 0) return null;
 
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`
-                    flex items-center gap-3 px-4 py-2.5 rounded-xl
-                    border transition-all duration-200
-                    ${isActive
-                      ? "text-[#A78BFA] bg-[#8B5CF6]/20 border-[#8B5CF6]/30"
-                      : "text-[#9CA3AF] border-transparent hover:text-white hover:bg-[#1A1A24]"
-                    }
-                  `}
-                >
-                  <Icon
-                    size={18}
-                    strokeWidth={1.75}
-                    className={isActive ? "text-[#A78BFA]" : "text-[#6B7280]"}
-                  />
-                  <span className="font-medium text-[13px]">{label}</span>
-                </Link>
+                <div key={group.label} className="flex flex-col gap-1">
+                  <h3 className="px-4 text-[10px] font-bold text-[#6B7280] tracking-[0.15em] mb-2 uppercase">
+                    {group.label}
+                  </h3>
+                  <div className="flex flex-col gap-0.5">
+                    {visibleItems.map(({ label, href, icon: Icon }) => {
+                      const isActive =
+                        href === "/dashboard"
+                          ? pathname === "/dashboard"
+                          : pathname.startsWith(href);
+
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          className={`
+                            flex items-center gap-3 px-4 py-2.5 rounded-xl
+                            border transition-all duration-200 group
+                            ${isActive
+                              ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20 shadow-[0_0_15px_rgba(139,92,246,0.1)]"
+                              : "text-[#9CA3AF] border-transparent hover:text-white hover:bg-[#1A1A24]"
+                            }
+                          `}
+                        >
+                          <Icon
+                            size={18}
+                            strokeWidth={1.75}
+                            className={`
+                              transition-colors duration-200
+                              ${isActive ? "text-[#A78BFA]" : "text-[#6B7280] group-hover:text-white"}
+                            `}
+                          />
+                          <span className="font-medium text-[13px]">{label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </nav>
@@ -161,7 +211,7 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
         {/* ── Logout button ─────────────────────────────────────────────── */}
         <div className="px-3 pb-6 pt-2 border-t border-[#1A1A24]">
           <button
-            onClick={handleLogout}
+            onClick={() => setIsLogoutModalOpen(true)}
             className="
               flex items-center gap-3 w-full px-4 py-2.5 rounded-xl
               border border-transparent
@@ -174,6 +224,12 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
           </button>
         </div>
       </aside>
+
+      <LogoutModal 
+        isOpen={isLogoutModalOpen} 
+        onClose={() => setIsLogoutModalOpen(false)} 
+        onConfirm={handleLogout} 
+      />
     </>
   );
 }
