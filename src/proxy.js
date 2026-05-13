@@ -7,7 +7,6 @@ const protectedRoutes = [
   "/dashboard",
   "/subscriptions",
   "/profile",
-  "/payment_history",
   "/digital_content",
   "/api_usage",
   "/api_keys",

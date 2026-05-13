@@ -15,10 +15,14 @@ const LABEL_MAP = {
   api_keys: "API Keys",
   api_usage: "API Usage",
   digital_content: "Digital Content",
-  payment_history: "Payment History",
+  management: "Management",
+  transaction_management: "Transaction Management",
+  payment_management: "Payment Management",
+  subscription_management: "Subscription Management",
+  membership_management: "Membership Management",
+  user_management: "User Management",
   profile: "Profile",
   subscription: "Subscription",
-  user_management: "User Management",
   general_information: "General Information",
 };
 

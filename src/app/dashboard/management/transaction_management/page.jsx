@@ -9,7 +9,7 @@ const TRANSACTIONS = [
   { id: "INV-2025-0013", date: "Dec 15, 2025", description: "Pro Plan - Monthly", amount: "$29.00", status: "Paid" },
 ];
 
-export default function PaymentHistoryPage() {
+export default function TransactionManagementPage() {
   const [search, setSearch] = useState("");
 
   return (
@@ -17,8 +17,8 @@ export default function PaymentHistoryPage() {
       {/* Header */}
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-[26px] font-bold mb-1.5">Payment History</h1>
-          <p className="text-text-3 text-[13px]">Track your subscription payments and invoices.</p>
+          <h1 className="text-[26px] font-bold mb-1.5">Transaction Management</h1>
+          <p className="text-text-3 text-[13px]">Track your transactions and invoices.</p>
         </div>
       </header>
 
