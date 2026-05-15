@@ -7,7 +7,7 @@ import DashboardNavbar from "./DashboardNavbar";
 
 export default function TemplatesDashboard({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { user } = useAuth();
+  const { user,logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -40,7 +40,7 @@ export default function TemplatesDashboard({ children }) {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} UserData={user} />
+        <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} UserData={user} logout={logout} />
 
         <main className="flex-1 p-8 lg:p-12 overflow-y-auto w-full scroll-smooth">{children}</main>
       </div>

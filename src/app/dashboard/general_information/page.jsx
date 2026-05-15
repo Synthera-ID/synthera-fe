@@ -22,11 +22,11 @@ import {
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const PLATFORM_INFO = [
   { label: "Platform Name", value: "Synthera API Platform" },
-  { label: "Version", value: "v3.4.1" },
+  { label: "Version", value: "v3.5.0" },
   { label: "Environment", value: "Production" },
   { label: "Region", value: "Asia Pacific (ap-1)" },
   { label: "Base URL", value: "https://api.synthera.id/api", isCode: true },
-  { label: "Last Updated", value: "April 25, 2026" },
+  { label: "Last Updated", value: "May 15, 2026" },
 ];
 
 const SERVICE_STATUS = [
@@ -46,6 +46,18 @@ const RATE_LIMITS = [
 ];
 
 const CHANGELOG = [
+  {
+    version: "v3.5.0",
+    date: "May 15, 2026",
+    type: "major",
+    notes: "Full Management Dashboard: CRUD for Payment, Transaction, Subscription, Membership, and Digital Content (Course) Management. Admin route protection with auth:sanctum + AdminMiddleware. Audit fields (CreatedBy, CreatedDate, LastUpdateBy, LastUpdateDate) added across all modules. Currency standardized to IDR (Rp).",
+  },
+  {
+    version: "v3.4.2",
+    date: "May 15, 2026",
+    type: "patch",
+    notes: "Fixed broken PaymentController update, TransactionController validation syntax error, MembershipController wrong update fields. Removed duplicate routes and exception stack trace leaks.",
+  },
   { version: "v3.4.1", date: "Apr 25, 2026", type: "patch", notes: "Fixed edge case in 2FA token expiry validation." },
   {
     version: "v3.4.0",
@@ -100,7 +112,7 @@ export default function GeneralInformationPage() {
           icon={<Globe size={20} className="text-violet-400" />}
           iconBg="bg-violet-500/20"
           label="API Version"
-          value="v3.4.1"
+          value="v3.5.0"
         />
         <StatCard
           icon={<Server size={20} className="text-blue-400" />}

@@ -2,38 +2,40 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Wallet, Search, Download, MoreHorizontal,
-  Check, AlertCircle, Loader2, X, Eye,
-  CreditCard, TrendingUp, Clock, XCircle,
+  Wallet, Search, Plus, MoreHorizontal,
+  Check, AlertCircle, Loader2, X, Edit3,
+  Trash2, CreditCard, TrendingUp, Clock, XCircle,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  paid:    { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "Paid" },
-  pending: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/20",   label: "Pending" },
-  failed:  { bg: "bg-rose-500/10",    text: "text-rose-400",    border: "border-rose-500/20",     label: "Failed" },
-  refunded:{ bg: "bg-blue-500/10",    text: "text-blue-400",    border: "border-blue-500/20",     label: "Refunded" },
+  pending: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400", label: "Pending" },
+  success: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Success" },
+  failed:  { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20", dot: "bg-rose-400", label: "Failed" },
 };
 
 const METHOD_STYLES = {
   credit_card:   { label: "Credit Card",   color: "text-violet-400" },
   bank_transfer: { label: "Bank Transfer", color: "text-blue-400" },
   e_wallet:      { label: "E-Wallet",      color: "text-emerald-400" },
-  other:         { label: "Other",         color: "text-text-3" },
+  qris:          { label: "QRIS",          color: "text-amber-400" },
 };
 
-const STATUS_FILTERS = ["All", "Paid", "Pending", "Failed", "Refunded"];
+const STATUS_FILTERS = ["All", "Pending", "Success", "Failed"];
+
+const INPUT_CLS = "w-full px-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors appearance-none";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(str) {
   if (!str) return "-";
-  return new Date(str).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  return new Date(str).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function formatCurrency(amount) {
   if (amount == null) return "-";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
 }
 
 function getStatusStyle(status) {
@@ -41,18 +43,16 @@ function getStatusStyle(status) {
 }
 
 function getMethodLabel(method) {
-  return METHOD_STYLES[method?.toLowerCase()] ?? METHOD_STYLES.other;
+  return METHOD_STYLES[method?.toLowerCase()] ?? { label: method || "Other", color: "text-text-3" };
 }
 
-// ─── Mock data (replace with real API call) ───────────────────────────────────
-const MOCK_PAYMENTS = [
-  { id: 1, invoice_id: "INV-2026-0021", user_name: "Alice Johnson", user_email: "alice@example.com", amount: 29, method: "credit_card", status: "paid", created_at: "2026-04-15T10:22:00Z", description: "Pro Plan - Monthly" },
-  { id: 2, invoice_id: "INV-2026-0020", user_name: "Bob Smith",    user_email: "bob@example.com",   amount: 99, method: "bank_transfer", status: "paid", created_at: "2026-04-10T08:00:00Z", description: "Enterprise Plan - Monthly" },
-  { id: 3, invoice_id: "INV-2026-0019", user_name: "Carol White",  user_email: "carol@example.com", amount: 29, method: "e_wallet",      status: "pending", created_at: "2026-04-09T14:30:00Z", description: "Pro Plan - Monthly" },
-  { id: 4, invoice_id: "INV-2026-0018", user_name: "Dan Brown",    user_email: "dan@example.com",   amount: 29, method: "credit_card",   status: "failed",  created_at: "2026-04-08T09:15:00Z", description: "Pro Plan - Monthly" },
-  { id: 5, invoice_id: "INV-2026-0017", user_name: "Eva Green",    user_email: "eva@example.com",   amount: 49, method: "bank_transfer", status: "refunded",created_at: "2026-04-05T11:00:00Z", description: "Business Plan - Monthly" },
-  { id: 6, invoice_id: "INV-2026-0016", user_name: "Frank Lee",    user_email: "frank@example.com", amount: 99, method: "credit_card",   status: "paid",    created_at: "2026-04-01T07:45:00Z", description: "Enterprise Plan - Monthly" },
-];
+const EMPTY_FORM = {
+  payment_method: "qris",
+  payment_code: "",
+  payment_gateway: "DuitKu",
+  min_amount: 0,
+  payment_status: "pending",
+};
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentManagementPage() {
@@ -61,26 +61,23 @@ export default function PaymentManagementPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [activeMenu, setActiveMenu] = useState(null);
-  const [detailPayment, setDetailPayment] = useState(null);
+  const [modalData, setModalData] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [notification, setNotification] = useState(null);
 
-  // Fetch (swap with real API when ready)
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      // const res = await apiFetch.get(`/admin/payments?search=${search}&status=${filterStatus}`);
-      // setPayments(res.data || []);
-      await new Promise((r) => setTimeout(r, 500)); // simulate network
-      let data = MOCK_PAYMENTS;
-      if (search) data = data.filter((p) =>
-        p.invoice_id.toLowerCase().includes(search.toLowerCase()) ||
-        p.user_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.user_email.toLowerCase().includes(search.toLowerCase())
-      );
-      if (filterStatus !== "All") data = data.filter((p) => p.status.toLowerCase() === filterStatus.toLowerCase());
-      setPayments(data);
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (filterStatus !== "All") params.append("status", filterStatus.toLowerCase());
+      params.append("per_page", "100");
+
+      const res = await apiFetch.get(`/admin/payments?${params.toString()}`);
+      setPayments(res.data || []);
     } catch {
-      showNotification("Gagal memuat data pembayaran.", "error");
+      showNotification("Gagal memuat data payment.", "error");
     } finally {
       setLoading(false);
     }
@@ -92,32 +89,48 @@ export default function PaymentManagementPage() {
   }, [fetchPayments]);
 
   // Stats
-  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
-  const totalPaid    = payments.filter((p) => p.status === "paid").length;
-  const totalPending = payments.filter((p) => p.status === "pending").length;
-  const totalFailed  = payments.filter((p) => p.status === "failed").length;
+  const totalPayments = payments.length;
+  const totalSuccess = payments.filter((p) => p.payment_status === "success").length;
+  const totalPending = payments.filter((p) => p.payment_status === "pending").length;
+  const totalFailed = payments.filter((p) => p.payment_status === "failed").length;
 
   function showNotification(msg, type = "success") {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
   }
 
-  function handleExport() {
-    const rows = [
-      ["Invoice ID", "User", "Email", "Amount", "Method", "Status", "Date", "Description"],
-      ...payments.map((p) => [
-        p.invoice_id, p.user_name, p.user_email,
-        formatCurrency(p.amount), p.method, p.status,
-        formatDate(p.created_at), p.description,
-      ]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "payments.csv"; a.click();
-    URL.revokeObjectURL(url);
-    showNotification("Export berhasil.");
+  // Save (create/update)
+  async function handleSave(form) {
+    try {
+      if (form.isNew) {
+        const res = await apiFetch.post("/admin/payments", form);
+        setPayments((prev) => [res.data, ...prev]);
+        showNotification("Payment method created.");
+      } else {
+        const res = await apiFetch.put(`/admin/payments/${form.id}`, form);
+        setPayments((prev) => prev.map((p) => (p.id === form.id ? res.data : p)));
+        showNotification("Payment method updated.");
+      }
+      setModalData(null);
+    } catch (err) {
+      const msg = err?.data?.message || "Gagal menyimpan payment method.";
+      showNotification(msg, "error");
+    }
+  }
+
+  // Delete
+  async function handleDelete(id) {
+    setIsDeleting(true);
+    try {
+      await apiFetch.delete(`/admin/payments/${id}`);
+      setPayments((prev) => prev.filter((p) => p.id !== id));
+      showNotification("Payment method deleted.");
+      setDeleteTarget(null);
+    } catch (err) {
+      showNotification(err?.data?.message || "Gagal menghapus.", "error");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -126,21 +139,20 @@ export default function PaymentManagementPage() {
       <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-[26px] font-bold mb-1.5">Payment Management</h1>
-          <p className="text-text-3 text-[13px]">Monitor and manage all payment transactions on your platform.</p>
+          <p className="text-text-3 text-[13px]">Manage payment methods available on your platform.</p>
         </div>
         <button
-          onClick={handleExport}
+          onClick={() => setModalData({ ...EMPTY_FORM, isNew: true })}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]"
         >
-          <Download size={15} />
-          Export CSV
+          <Plus size={15} /> Add Payment Method
         </button>
       </header>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard icon={<TrendingUp size={20} className="text-violet-400" />} iconBg="bg-violet-500/20" label="Total Revenue" value={formatCurrency(totalRevenue)} />
-        <StatCard icon={<CreditCard size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Paid" value={totalPaid} />
+        <StatCard icon={<CreditCard size={20} className="text-violet-400" />} iconBg="bg-violet-500/20" label="Total Methods" value={totalPayments} />
+        <StatCard icon={<TrendingUp size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Success" value={totalSuccess} />
         <StatCard icon={<Clock size={20} className="text-amber-400" />} iconBg="bg-amber-500/20" label="Pending" value={totalPending} />
         <StatCard icon={<XCircle size={20} className="text-rose-400" />} iconBg="bg-rose-500/20" label="Failed" value={totalFailed} />
       </div>
@@ -151,7 +163,7 @@ export default function PaymentManagementPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-3" />
           <input
             type="text"
-            placeholder="Search by invoice, name or email…"
+            placeholder="Search by method, code or gateway…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors"
@@ -176,64 +188,70 @@ export default function PaymentManagementPage() {
 
       {/* Table */}
       <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-hidden">
-        {/* Table head */}
-        <div className="hidden md:grid grid-cols-[1.4fr_1.8fr_1fr_1fr_1fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
-          <span>Invoice</span>
-          <span>User</span>
-          <span>Amount</span>
+        <div className="hidden md:grid grid-cols-[1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
           <span>Method</span>
+          <span>Code</span>
+          <span>Gateway</span>
+          <span>Min Amount</span>
           <span>Status</span>
+          <span>Created</span>
+          <span>Updated</span>
           <span />
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20 gap-3">
             <Loader2 size={24} className="animate-spin text-primary-3" />
-            <span className="text-text-3 text-[13px]">Loading payments...</span>
+            <span className="text-text-3 text-[13px]">Loading payment methods...</span>
           </div>
         ) : payments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-3">
             <AlertCircle size={36} className="opacity-40" />
-            <p className="text-[14px]">No payments found.</p>
+            <p className="text-[14px]">No payment methods found.</p>
           </div>
         ) : (
           payments.map((p, i) => {
-            const st = getStatusStyle(p.status);
-            const mt = getMethodLabel(p.method);
+            const st = getStatusStyle(p.payment_status);
+            const mt = getMethodLabel(p.payment_method);
             return (
               <div
                 key={p.id}
-                className={`grid grid-cols-[1fr_44px] md:grid-cols-[1.4fr_1.8fr_1fr_1fr_1fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
+                className={`grid grid-cols-[1fr_44px] md:grid-cols-[1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
                   i < payments.length - 1 ? "border-b border-bg-3/50" : ""
                 }`}
               >
-                {/* Invoice + date */}
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-text-1 truncate">{p.invoice_id}</div>
-                  <div className="text-[11px] text-text-3 mt-0.5">{formatDate(p.created_at)}</div>
-                </div>
-
-                {/* User — hidden on mobile */}
-                <div className="hidden md:flex flex-col min-w-0">
-                  <span className="text-[13px] font-medium text-text-1 truncate">{p.user_name}</span>
-                  <span className="text-[11px] text-text-3 truncate">{p.user_email}</span>
-                </div>
-
-                {/* Amount */}
-                <div className="hidden md:block text-[13px] font-bold text-text-1">
-                  {formatCurrency(p.amount)}
-                </div>
-
                 {/* Method */}
-                <div className={`hidden md:block text-[12px] font-semibold ${mt.color}`}>
-                  {mt.label}
+                <div className="min-w-0">
+                  <div className={`text-[13px] font-semibold ${mt.color}`}>{mt.label}</div>
                 </div>
 
-                {/* Status badge */}
+                {/* Code */}
+                <div className="hidden md:block text-[13px] text-text-1 font-mono">{p.payment_code}</div>
+
+                {/* Gateway */}
+                <div className="hidden md:block text-[13px] text-text-2">{p.payment_gateway}</div>
+
+                {/* Min Amount */}
+                <div className="hidden md:block text-[13px] font-bold text-text-1">
+                  {formatCurrency(p.min_amount)}
+                </div>
+
+                {/* Status */}
+                <div className="hidden md:flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
+                  <span className={`text-[12px] font-semibold ${st.text}`}>{st.label}</span>
+                </div>
+
+                {/* Created */}
                 <div className="hidden md:block">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border ${st.bg} ${st.text} ${st.border}`}>
-                    {st.label}
-                  </span>
+                  <div className="text-[11px] text-text-3">{formatDate(p.CreatedDate || p.created_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{p.CreatedBy || "-"}</div>
+                </div>
+
+                {/* Updated */}
+                <div className="hidden md:block">
+                  <div className="text-[11px] text-text-3">{formatDate(p.LastUpdateDate || p.updated_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{p.LastUpdateBy || "-"}</div>
                 </div>
 
                 {/* Action */}
@@ -249,15 +267,16 @@ export default function PaymentManagementPage() {
                     <div className="absolute right-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
                       <button
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                        onClick={() => { setDetailPayment(p); setActiveMenu(null); }}
+                        onClick={() => { setModalData({ ...p, isNew: false }); setActiveMenu(null); }}
                       >
-                        <Eye size={14} className="text-primary-3" /> View Detail
+                        <Edit3 size={14} className="text-primary-3" /> Edit Method
                       </button>
+                      <div className="border-t border-bg-3/60 my-0.5" />
                       <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                        onClick={() => { handleExport(); setActiveMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        onClick={() => { setDeleteTarget(p); setActiveMenu(null); }}
                       >
-                        <Download size={14} className="text-emerald-400" /> Export Row
+                        <Trash2 size={14} /> Delete Method
                       </button>
                     </div>
                   )}
@@ -269,7 +288,7 @@ export default function PaymentManagementPage() {
 
         {!loading && (
           <p className="text-[12px] text-text-3 px-6 py-4 border-t border-bg-3/50">
-            Showing {payments.length} payment{payments.length !== 1 ? "s" : ""}
+            Showing {payments.length} payment method{payments.length !== 1 ? "s" : ""}
           </p>
         )}
       </div>
@@ -277,10 +296,27 @@ export default function PaymentManagementPage() {
       {/* Close dropdown on outside click */}
       {activeMenu && <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />}
 
-      {/* Detail Modal */}
-      {detailPayment && (
-        <PaymentDetailModal payment={detailPayment} onClose={() => setDetailPayment(null)} />
+      {/* Create / Edit Modal */}
+      {modalData && (
+        <PaymentModal
+          data={modalData}
+          onClose={() => setModalData(null)}
+          onSave={handleSave}
+        />
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => handleDelete(deleteTarget?.id)}
+        title="Delete Payment Method?"
+        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.payment_code}"? This action cannot be undone.` : ""}
+        confirmText="Delete"
+        variant="danger"
+        icon={Trash2}
+        isLoading={isDeleting}
+      />
 
       {/* Toast */}
       {notification && (
@@ -310,67 +346,86 @@ function StatCard({ icon, iconBg, label, value }) {
   );
 }
 
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-function PaymentDetailModal({ payment, onClose }) {
-  const st = getStatusStyle(payment.status);
-  const mt = getMethodLabel(payment.method);
+// ─── Create / Edit Modal ──────────────────────────────────────────────────────
+function PaymentModal({ data, onClose, onSave }) {
+  const isNew = !!data.isNew;
+  const [form, setForm] = useState({ ...data });
+  const [saving, setSaving] = useState(false);
+
+  function set(field, value) { setForm((p) => ({ ...p, [field]: value })); }
+
+  async function handleSubmit() {
+    if (!form.payment_code.trim()) return;
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-        {/* Modal header */}
+      <div className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-1/10 flex items-center justify-center">
-              <Wallet size={18} className="text-primary-3" />
-            </div>
-            <div>
-              <h2 className="text-[16px] font-bold">{payment.invoice_id}</h2>
-              <p className="text-[12px] text-text-3">{formatDate(payment.created_at)}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:text-text-1 hover:bg-bg-3 transition-all"
-          >
+          <h2 className="text-[18px] font-bold">{isNew ? "Add Payment Method" : "Edit Payment Method"}</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:text-text-1 hover:bg-bg-3 transition-all">
             <X size={16} />
           </button>
         </div>
 
-        {/* Detail rows */}
-        <div className="space-y-3">
-          <DetailRow label="User" value={payment.user_name} />
-          <DetailRow label="Email" value={payment.user_email} />
-          <DetailRow label="Description" value={payment.description} />
-          <DetailRow label="Amount" value={
-            <span className="text-emerald-400 font-bold">{formatCurrency(payment.amount)}</span>
-          } />
-          <DetailRow label="Method" value={
-            <span className={`font-semibold ${mt.color}`}>{mt.label}</span>
-          } />
-          <DetailRow label="Status" value={
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border ${st.bg} ${st.text} ${st.border}`}>
-              {st.label}
-            </span>
-          } />
+        <div className="space-y-4">
+          <FormField label="Payment Method">
+            <select value={form.payment_method} onChange={(e) => set("payment_method", e.target.value)} className={INPUT_CLS}>
+              <option value="credit_card">Credit Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="e_wallet">E-Wallet</option>
+              <option value="qris">QRIS</option>
+            </select>
+          </FormField>
+
+          <FormField label="Payment Code">
+            <input type="text" value={form.payment_code} onChange={(e) => set("payment_code", e.target.value)}
+              placeholder="e.g. SP, BC, M1" className={INPUT_CLS} />
+          </FormField>
+
+          <FormField label="Payment Gateway">
+            <input type="text" value={form.payment_gateway} onChange={(e) => set("payment_gateway", e.target.value)}
+              placeholder="e.g. DuitKu" className={INPUT_CLS} />
+          </FormField>
+
+          <FormField label="Min Amount (Rp)">
+            <input type="number" min={0} value={form.min_amount} onChange={(e) => set("min_amount", Number(e.target.value))}
+              className={INPUT_CLS} />
+          </FormField>
+
+          <FormField label="Status">
+            <select value={form.payment_status} onChange={(e) => set("payment_status", e.target.value)} className={INPUT_CLS}>
+              <option value="pending">Pending</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+            </select>
+          </FormField>
         </div>
 
-        <button
-          onClick={onClose}
-          className="mt-8 w-full py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all"
-        >
-          Close
-        </button>
+        <div className="flex gap-3 mt-8">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all">
+            Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={!form.payment_code.trim() || saving}
+            className="flex-1 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-semibold transition-all shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2">
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isNew ? "Create Method" : "Save Changes"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({ label, value }) {
+// ─── FormField ────────────────────────────────────────────────────────────────
+function FormField({ label, children }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-bg-3/50 last:border-0">
-      <span className="text-[12px] text-text-3 uppercase tracking-wide font-semibold">{label}</span>
-      <span className="text-[13px] text-text-1">{value}</span>
+    <div>
+      <label className="block text-[12px] font-semibold text-text-3 mb-1.5 uppercase tracking-wide">{label}</label>
+      {children}
     </div>
   );
 }

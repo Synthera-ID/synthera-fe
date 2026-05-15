@@ -4,84 +4,76 @@ import { useState, useEffect, useCallback } from "react";
 import {
   LayoutList, Search, Plus, MoreHorizontal,
   Check, AlertCircle, Loader2, X, Edit3,
-  Trash2, Users, Crown, Zap, Star, Shield,
+  Trash2, Users, Crown, Zap, Star, BadgeCheck,
+  ArrowUpDown,
 } from "lucide-react";
+import apiFetch from "@/utils/apiFetch";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  active:   { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Active" },
-  inactive: { bg: "bg-bg-3",           text: "text-text-3",      border: "border-bg-3",           dot: "bg-text-3",     label: "Inactive" },
-  draft:    { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/20",   dot: "bg-amber-400",  label: "Draft" },
+  active:    { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400", label: "Active" },
+  expired:   { bg: "bg-rose-500/10",    text: "text-rose-400",    dot: "bg-rose-400",    label: "Expired" },
+  cancelled: { bg: "bg-bg-3",           text: "text-text-3",      dot: "bg-text-3",      label: "Cancelled" },
 };
 
-const TIER_META = {
-  free:       { icon: Shield, color: "text-text-3",     bg: "bg-bg-3",          border: "border-bg-3",          label: "Free" },
-  pro:        { icon: Zap,    color: "text-violet-400",  bg: "bg-violet-500/10", border: "border-violet-500/20", label: "Pro" },
-  business:   { icon: Star,   color: "text-amber-400",   bg: "bg-amber-500/10",  border: "border-amber-500/20",  label: "Business" },
-  enterprise: { icon: Crown,  color: "text-blue-400",    bg: "bg-blue-500/10",   border: "border-blue-500/20",   label: "Enterprise" },
-};
+const AVATAR_COLORS = [
+  "bg-violet-500/20 text-violet-400", "bg-emerald-500/20 text-emerald-400",
+  "bg-amber-500/20 text-amber-400", "bg-blue-500/20 text-blue-400",
+  "bg-rose-500/20 text-rose-400", "bg-cyan-500/20 text-cyan-400",
+];
 
-const STATUS_FILTERS = ["All", "Active", "Inactive", "Draft"];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatCurrency(n) {
-  if (!n && n !== 0) return "-";
-  return n === 0
-    ? "Free"
-    : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+const INPUT_CLS = "w-full px-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors appearance-none";
+const STATUS_FILTERS = ["All", "Active", "Expired", "Cancelled"];
 
 function formatDate(str) {
   if (!str) return "-";
-  return new Date(str).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  return new Date(str).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function getTier(t)   { return TIER_META[t?.toLowerCase()]  ?? TIER_META.free; }
-function getStatus(s) { return STATUS_STYLES[s?.toLowerCase()] ?? STATUS_STYLES.inactive; }
+function formatDateShort(str) {
+  if (!str) return "-";
+  return new Date(str).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+}
 
-const EMPTY_FORM = {
-  name: "", tier: "free", price_monthly: 0, price_yearly: 0,
-  max_members: 1, description: "", status: "active",
-};
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_MEMBERSHIPS = [
-  { id: 1, name: "Free",       tier: "free",       price_monthly: 0,   price_yearly: 0,   max_members: 1,   member_count: 412, status: "active",   description: "Basic access for individual users.", created_at: "2025-01-01T00:00:00Z" },
-  { id: 2, name: "Pro",        tier: "pro",        price_monthly: 29,  price_yearly: 290, max_members: 5,   member_count: 180, status: "active",   description: "Advanced features for small teams.", created_at: "2025-01-01T00:00:00Z" },
-  { id: 3, name: "Business",   tier: "business",   price_monthly: 49,  price_yearly: 490, max_members: 20,  member_count: 74,  status: "active",   description: "Collaboration tools for growing teams.", created_at: "2025-06-01T00:00:00Z" },
-  { id: 4, name: "Enterprise", tier: "enterprise", price_monthly: 99,  price_yearly: 990, max_members: 999, member_count: 22,  status: "active",   description: "Full platform access with priority support.", created_at: "2025-06-01T00:00:00Z" },
-  { id: 5, name: "Starter",    tier: "pro",        price_monthly: 9,   price_yearly: 90,  max_members: 1,   member_count: 0,   status: "draft",    description: "Lightweight plan for solo creators.", created_at: "2026-04-10T00:00:00Z" },
-  { id: 6, name: "Legacy",     tier: "free",       price_monthly: 0,   price_yearly: 0,   max_members: 1,   member_count: 0,   status: "inactive", description: "Deprecated plan, no longer offered.", created_at: "2024-01-01T00:00:00Z" },
-];
+function getStatus(s) { return STATUS_STYLES[s?.toLowerCase()] ?? STATUS_STYLES.active; }
+function getInitials(name) {
+  if (!name) return "??";
+  const parts = name.trim().split(" ");
+  return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+}
+function getAvatarColor(id) { return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length]; }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MembershipManagementPage() {
-  const [memberships, setMemberships]   = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState("");
-  const [filterStatus, setFilter]       = useState("All");
-  const [activeMenu, setActiveMenu]     = useState(null);
-  const [modalData, setModalData]       = useState(null); // null | { isNew, ...fields }
+  const [memberships, setMemberships] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilter] = useState("All");
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [modalData, setModalData] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isDeleting, setIsDeleting]     = useState(false);
-  const [notification, setNotif]        = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [notification, setNotif] = useState(null);
+
+  // Fetch plans for dropdown
+  useEffect(() => {
+    apiFetch.get("/subscriptions").then((res) => {
+      setPlans(res?.data || res || []);
+    }).catch(() => {});
+  }, []);
 
   const fetchMemberships = useCallback(async () => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 400));
-      let data = MOCK_MEMBERSHIPS;
-      if (search) {
-        const q = search.toLowerCase();
-        data = data.filter((m) =>
-          m.name.toLowerCase().includes(q) ||
-          m.tier.toLowerCase().includes(q) ||
-          m.description.toLowerCase().includes(q)
-        );
-      }
-      if (filterStatus !== "All")
-        data = data.filter((m) => m.status.toLowerCase() === filterStatus.toLowerCase());
-      setMemberships(data);
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (filterStatus !== "All") params.append("status", filterStatus.toLowerCase());
+      params.append("per_page", "50");
+
+      const res = await apiFetch.get(`/admin/memberships?${params.toString()}`);
+      setMemberships(res.data || []);
     } catch {
       showNotif("Gagal memuat data membership.", "error");
     } finally {
@@ -95,252 +87,207 @@ export default function MembershipManagementPage() {
   }, [fetchMemberships]);
 
   // Stats
-  const totalActive   = memberships.filter((m) => m.status === "active").length;
-  const totalMembers  = memberships.reduce((acc, m) => acc + (m.member_count ?? 0), 0);
-  const totalDraft    = memberships.filter((m) => m.status === "draft").length;
-  const totalPlans    = memberships.length;
+  const totalActive = memberships.filter((m) => m.membership_status === "active").length;
+  const totalExpired = memberships.filter((m) => m.membership_status === "expired").length;
+  const totalCancelled = memberships.filter((m) => m.membership_status === "cancelled").length;
+  const totalMembers = memberships.length;
 
   function showNotif(msg, type = "success") {
     setNotif({ msg, type });
     setTimeout(() => setNotif(null), 3000);
   }
 
-  // Save (create / update)
-  function handleSave(form) {
-    if (form.isNew) {
-      const newItem = { ...form, id: Date.now(), member_count: 0, created_at: new Date().toISOString() };
-      delete newItem.isNew;
-      setMemberships((prev) => [newItem, ...prev]);
-      showNotif("Membership plan created.");
-    } else {
-      setMemberships((prev) => prev.map((m) => (m.id === form.id ? { ...m, ...form } : m)));
-      showNotif("Membership plan updated.");
+  async function handleSave(form) {
+    try {
+      const payload = {
+        user_id: form.user_id,
+        plan_id: Number(form.plan_id),
+        membership_status: form.membership_status,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        auto_renew: form.auto_renew,
+      };
+
+      if (form.isNew) {
+        const res = await apiFetch.post("/admin/memberships", payload);
+        setMemberships((prev) => [res.data, ...prev]);
+        showNotif("Membership created.");
+      } else {
+        const res = await apiFetch.put(`/admin/memberships/${form.id}`, payload);
+        setMemberships((prev) => prev.map((m) => (m.id === form.id ? res.data : m)));
+        showNotif("Membership updated.");
+      }
+      setModalData(null);
+    } catch (err) {
+      const msg = err?.data?.message || Object.values(err?.data?.errors || {})?.[0]?.[0] || "Gagal menyimpan.";
+      showNotif(msg, "error");
     }
-    setModalData(null);
   }
 
-  // Delete
-  function handleDelete(id) {
+  async function handleDelete(id) {
     setIsDeleting(true);
-    setTimeout(() => {
+    try {
+      await apiFetch.delete(`/admin/memberships/${id}`);
       setMemberships((prev) => prev.filter((m) => m.id !== id));
-      showNotif("Membership plan deleted.");
+      showNotif("Membership deleted.");
       setDeleteTarget(null);
+    } catch (err) {
+      showNotif(err?.data?.message || "Gagal menghapus.", "error");
+    } finally {
       setIsDeleting(false);
-    }, 600);
+    }
   }
 
   return (
     <>
-      {/* Header */}
       <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-[26px] font-bold mb-1.5">Membership Management</h1>
-          <p className="text-text-3 text-[13px]">Create and manage membership plans offered on your platform.</p>
+          <p className="text-text-3 text-[13px]">Manage user memberships, upgrade or downgrade plans.</p>
         </div>
-        <button
-          onClick={() => setModalData({ ...EMPTY_FORM, isNew: true })}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]"
-        >
-          <Plus size={15} /> Add Plan
+        <button onClick={() => setModalData({ isNew: true, user_id: "", plan_id: "", membership_status: "active", start_date: "", end_date: "", auto_renew: false })}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]">
+          <Plus size={15} /> Add Membership
         </button>
       </header>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard icon={<LayoutList size={20} className="text-violet-400" />}  iconBg="bg-violet-500/20"  label="Total Plans"    value={totalPlans} />
-        <StatCard icon={<Check      size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Active Plans"   value={totalActive} />
-        <StatCard icon={<Users      size={20} className="text-blue-400" />}    iconBg="bg-blue-500/20"    label="Total Members"  value={totalMembers.toLocaleString()} />
-        <StatCard icon={<Edit3      size={20} className="text-amber-400" />}   iconBg="bg-amber-500/20"   label="Draft Plans"    value={totalDraft} />
+        <StatCard icon={<Users size={20} className="text-violet-400" />} iconBg="bg-violet-500/20" label="Total Members" value={totalMembers} />
+        <StatCard icon={<Check size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Active" value={totalActive} />
+        <StatCard icon={<AlertCircle size={20} className="text-rose-400" />} iconBg="bg-rose-500/20" label="Expired" value={totalExpired} />
+        <StatCard icon={<X size={20} className="text-text-3" />} iconBg="bg-bg-3" label="Cancelled" value={totalCancelled} />
       </div>
 
-      {/* Filters */}
       <div className="bg-bg-2 border border-bg-3 rounded-2xl px-6 py-5 mb-6 flex flex-wrap items-center gap-4">
         <div className="relative flex-1 min-w-[220px]">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-3" />
-          <input
-            type="text"
-            placeholder="Search by name, tier or description…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors"
-          />
+          <input type="text" placeholder="Search by user name or email…" value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors" />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {STATUS_FILTERS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
+            <button key={s} onClick={() => setFilter(s)}
               className={`px-3.5 py-1.5 rounded-lg text-[12px] font-semibold border transition-all duration-150 ${
-                filterStatus === s
-                  ? "bg-primary-1/20 text-primary-3 border-primary-1/30"
-                  : "bg-transparent text-text-3 border-bg-3 hover:border-primary-1/20 hover:text-text-2"
-              }`}
-            >
-              {s}
-            </button>
+                filterStatus === s ? "bg-primary-1/20 text-primary-3 border-primary-1/30" : "bg-transparent text-text-3 border-bg-3 hover:border-primary-1/20 hover:text-text-2"
+              }`}>{s}</button>
           ))}
         </div>
       </div>
 
-      {/* Cards Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20 gap-3">
-          <Loader2 size={24} className="animate-spin text-primary-3" />
-          <span className="text-text-3 text-[13px]">Loading membership plans...</span>
+      {/* Table */}
+      <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-hidden">
+        <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+          <span>User</span><span>Plan</span><span>Status</span><span>Start</span><span>End</span><span>Created</span><span>Updated</span><span />
         </div>
-      ) : memberships.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-3">
-          <AlertCircle size={36} className="opacity-40" />
-          <p className="text-[14px]">No membership plans found.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {memberships.map((m) => {
-            const tier = getTier(m.tier);
-            const st   = getStatus(m.status);
-            const Icon = tier.icon;
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20 gap-3">
+            <Loader2 size={24} className="animate-spin text-primary-3" />
+            <span className="text-text-3 text-[13px]">Loading memberships...</span>
+          </div>
+        ) : memberships.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-3">
+            <AlertCircle size={36} className="opacity-40" />
+            <p className="text-[14px]">No memberships found.</p>
+          </div>
+        ) : (
+          memberships.map((m, i) => {
+            const st = getStatus(m.membership_status);
             return (
-              <div
-                key={m.id}
-                className="bg-bg-2 border border-bg-3 rounded-2xl p-6 flex flex-col gap-5 hover:border-primary-1/30 transition-all duration-200 group"
-              >
-                {/* Card header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-xl ${tier.bg} border ${tier.border} flex items-center justify-center shrink-0`}>
-                      <Icon size={20} className={tier.color} />
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-bold text-text-1">{m.name}</h3>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${tier.bg} ${tier.color} ${tier.border}`}>
-                        {tier.label}
-                      </span>
-                    </div>
+              <div key={m.id} className={`grid grid-cols-[1fr_44px] lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
+                i < memberships.length - 1 ? "border-b border-bg-3/50" : ""
+              }`}>
+                {/* User */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-[11px] shrink-0 ${getAvatarColor(m.user_id)}`}>
+                    {getInitials(m.user?.name)}
                   </div>
-
-                  {/* Action menu */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
-                    >
-                      <MoreHorizontal size={16} />
-                    </button>
-                    {activeMenu === m.id && (
-                      <div className="absolute right-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
-                        <button
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                          onClick={() => { setModalData({ ...m, isNew: false }); setActiveMenu(null); }}
-                        >
-                          <Edit3 size={14} className="text-primary-3" /> Edit Plan
-                        </button>
-                        <div className="border-t border-bg-3/60 my-0.5" />
-                        <button
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
-                          onClick={() => { setDeleteTarget(m); setActiveMenu(null); }}
-                        >
-                          <Trash2 size={14} /> Delete Plan
-                        </button>
-                      </div>
-                    )}
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-text-1 truncate">{m.user?.name || "-"}</div>
+                    <div className="text-[11px] text-text-3 truncate">{m.user?.email || "-"}</div>
                   </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-[12.5px] text-text-3 leading-relaxed line-clamp-2">{m.description}</p>
-
-                {/* Pricing */}
-                <div className="flex items-end gap-3">
-                  <div>
-                    <p className="text-[11px] text-text-3 mb-0.5">Monthly</p>
-                    <p className="text-[18px] font-bold text-text-1">{formatCurrency(m.price_monthly)}</p>
-                  </div>
-                  <div className="text-text-3 mb-1">/</div>
-                  <div>
-                    <p className="text-[11px] text-text-3 mb-0.5">Yearly</p>
-                    <p className="text-[18px] font-bold text-text-1">{formatCurrency(m.price_yearly)}</p>
-                  </div>
+                {/* Plan */}
+                <div className="hidden lg:block">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border bg-violet-500/10 text-violet-400 border-violet-500/20">
+                    {m.subscription?.name || "-"}
+                  </span>
                 </div>
 
-                {/* Footer meta */}
-                <div className="flex items-center justify-between pt-4 border-t border-bg-3/50">
-                  <div className="flex items-center gap-1.5 text-[12px] text-text-3">
-                    <Users size={13} />
-                    <span><strong className="text-text-1">{m.member_count?.toLocaleString()}</strong> members</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                    <span className={`text-[11px] font-semibold ${st.text}`}>{st.label}</span>
-                  </div>
+                {/* Status */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
+                  <span className={`text-[12px] font-semibold ${st.text}`}>{st.label}</span>
+                </div>
+
+                {/* Start */}
+                <div className="hidden lg:block text-[13px] text-text-2">{formatDateShort(m.start_date)}</div>
+
+                {/* End */}
+                <div className="hidden lg:block text-[13px] text-text-2">{formatDateShort(m.end_date)}</div>
+
+                {/* Created */}
+                <div className="hidden lg:block">
+                  <div className="text-[11px] text-text-3">{formatDate(m.CreatedDate || m.created_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{m.CreatedBy || "-"}</div>
+                </div>
+
+                {/* Updated */}
+                <div className="hidden lg:block">
+                  <div className="text-[11px] text-text-3">{formatDate(m.LastUpdateDate || m.updated_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{m.LastUpdateBy || "-"}</div>
+                </div>
+
+                {/* Action */}
+                <div className="relative flex justify-center">
+                  <button onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all">
+                    <MoreHorizontal size={16} />
+                  </button>
+                  {activeMenu === m.id && (
+                    <div className="absolute right-0 top-10 z-50 w-52 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
+                      <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                        onClick={() => { setModalData({ ...m, isNew: false, plan_id: m.plan_id }); setActiveMenu(null); }}>
+                        <Edit3 size={14} className="text-primary-3" /> Edit Membership
+                      </button>
+                      <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                        onClick={() => { setModalData({ ...m, isNew: false, plan_id: m.plan_id, _upgradeMode: true }); setActiveMenu(null); }}>
+                        <ArrowUpDown size={14} className="text-amber-400" /> Upgrade / Downgrade
+                      </button>
+                      <div className="border-t border-bg-3/60 my-0.5" />
+                      <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        onClick={() => { setDeleteTarget(m); setActiveMenu(null); }}>
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
 
-      {/* Dropdown close overlay */}
+        {!loading && <p className="text-[12px] text-text-3 px-6 py-4 border-t border-bg-3/50">Showing {memberships.length} membership{memberships.length !== 1 ? "s" : ""}</p>}
+      </div>
+
       {activeMenu && <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />}
 
-      {/* Create / Edit Modal */}
-      {modalData && (
-        <MembershipModal
-          data={modalData}
-          onClose={() => setModalData(null)}
-          onSave={handleSave}
-        />
-      )}
+      {modalData && <MembershipModal data={modalData} plans={plans} onClose={() => setModalData(null)} onSave={handleSave} />}
 
-      {/* Delete Confirmation */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
-                <Trash2 size={18} className="text-rose-400" />
-              </div>
-              <h2 className="text-[16px] font-bold">Delete Plan?</h2>
-            </div>
-            <p className="text-text-3 text-[13px] mb-6">
-              Are you sure you want to delete <strong className="text-text-1">{deleteTarget.name}</strong>? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteTarget.id)}
-                disabled={isDeleting}
-                className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-[13px] font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                {isDeleting ? "Deleting…" : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal isOpen={!!deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={() => handleDelete(deleteTarget?.id)}
+        title="Delete Membership?" message={deleteTarget ? `Are you sure you want to delete membership for "${deleteTarget.user?.name}"?` : ""} confirmText="Delete" variant="danger" icon={Trash2} isLoading={isDeleting} />
 
-      {/* Toast */}
       {notification && (
         <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[13px] font-semibold shadow-2xl border transition-all duration-300 ${
-          notification.type === "error"
-            ? "bg-bg-2 border-rose-500/30 text-rose-400"
-            : "bg-bg-2 border-emerald-500/30 text-emerald-400"
-        }`}>
-          <Check size={15} />
-          {notification.msg}
+          notification.type === "error" ? "bg-bg-2 border-rose-500/30 text-rose-400" : "bg-bg-2 border-emerald-500/30 text-emerald-400"}`}>
+          <Check size={15} />{notification.msg}
         </div>
       )}
     </>
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, iconBg, label, value }) {
   return (
     <div className="bg-bg-2 border border-bg-3 rounded-2xl p-5 flex items-center gap-4">
@@ -354,86 +301,102 @@ function StatCard({ icon, iconBg, label, value }) {
 }
 
 // ─── Create / Edit Modal ──────────────────────────────────────────────────────
-function MembershipModal({ data, onClose, onSave }) {
-  const isNew   = !!data.isNew;
-  const [form, setForm]     = useState({ ...data });
+function MembershipModal({ data, plans, onClose, onSave }) {
+  const isNew = !!data.isNew;
+  const isUpgrade = !!data._upgradeMode;
+  const [form, setForm] = useState({
+    id: data.id,
+    user_id: data.user_id || "",
+    plan_id: data.plan_id || "",
+    membership_status: data.membership_status || "active",
+    start_date: data.start_date || "",
+    end_date: data.end_date || "",
+    auto_renew: data.auto_renew || false,
+    isNew: data.isNew,
+  });
   const [saving, setSaving] = useState(false);
 
   function set(field, value) { setForm((p) => ({ ...p, [field]: value })); }
 
   async function handleSubmit() {
-    if (!form.name.trim()) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 500));
-    onSave(form);
+    await onSave(form);
     setSaving(false);
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[18px] font-bold">{isNew ? "Add Membership Plan" : "Edit Membership Plan"}</h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:text-text-1 hover:bg-bg-3 transition-all">
-            <X size={16} />
-          </button>
+          <h2 className="text-[18px] font-bold">
+            {isNew ? "Add Membership" : isUpgrade ? "Upgrade / Downgrade Plan" : "Edit Membership"}
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:text-text-1 hover:bg-bg-3 transition-all"><X size={16} /></button>
         </div>
 
-        <div className="space-y-4">
-          <FormField label="Plan Name">
-            <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)}
-              placeholder="e.g. Pro Plan" className={INPUT_CLS} />
-          </FormField>
-
-          <FormField label="Tier">
-            <select value={form.tier} onChange={(e) => set("tier", e.target.value)} className={INPUT_CLS}>
-              <option value="free">Free</option>
-              <option value="pro">Pro</option>
-              <option value="business">Business</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-          </FormField>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="Monthly Price ($)">
-              <input type="number" min={0} value={form.price_monthly} onChange={(e) => set("price_monthly", Number(e.target.value))}
-                className={INPUT_CLS} />
-            </FormField>
-            <FormField label="Yearly Price ($)">
-              <input type="number" min={0} value={form.price_yearly} onChange={(e) => set("price_yearly", Number(e.target.value))}
-                className={INPUT_CLS} />
-            </FormField>
+        {isUpgrade && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[12px] text-amber-400 font-medium flex items-center gap-2">
+            <ArrowUpDown size={14} />
+            Changing the plan will automatically adjust the end date based on the new plan duration.
           </div>
+        )}
 
-          <FormField label="Max Members">
-            <input type="number" min={1} value={form.max_members} onChange={(e) => set("max_members", Number(e.target.value))}
-              className={INPUT_CLS} />
-          </FormField>
+        <div className="space-y-4">
+          {isNew && (
+            <FormField label="User ID">
+              <input type="number" value={form.user_id} onChange={(e) => set("user_id", e.target.value)} placeholder="Enter user ID" className={INPUT_CLS} />
+            </FormField>
+          )}
 
-          <FormField label="Description">
-            <textarea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)}
-              placeholder="Short description of this plan…"
-              className={`${INPUT_CLS} resize-none`} />
-          </FormField>
+          {!isNew && !isUpgrade && (
+            <div className="p-3 rounded-xl bg-bg-3/50 border border-bg-3">
+              <p className="text-[12px] text-text-3">User: <strong className="text-text-1">{data.user?.name}</strong> ({data.user?.email})</p>
+            </div>
+          )}
 
-          <FormField label="Status">
-            <select value={form.status} onChange={(e) => set("status", e.target.value)} className={INPUT_CLS}>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="draft">Draft</option>
+          <FormField label="Subscription Plan">
+            <select value={form.plan_id} onChange={(e) => set("plan_id", e.target.value)} className={INPUT_CLS}>
+              <option value="">Select Plan</option>
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>{p.name} — {p.tier} ({p.duration_days} days)</option>
+              ))}
             </select>
           </FormField>
+
+          {!isUpgrade && (
+            <>
+              <FormField label="Status">
+                <select value={form.membership_status} onChange={(e) => set("membership_status", e.target.value)} className={INPUT_CLS}>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </FormField>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Start Date">
+                  <input type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} className={INPUT_CLS} />
+                </FormField>
+                <FormField label="End Date">
+                  <input type="date" value={form.end_date} onChange={(e) => set("end_date", e.target.value)} className={INPUT_CLS} />
+                </FormField>
+              </div>
+
+              <FormField label="Auto Renew">
+                <select value={form.auto_renew ? "1" : "0"} onChange={(e) => set("auto_renew", e.target.value === "1")} className={INPUT_CLS}>
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </FormField>
+            </>
+          )}
         </div>
 
         <div className="flex gap-3 mt-8">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all">
-            Cancel
-          </button>
-          <button onClick={handleSubmit} disabled={!form.name.trim() || saving}
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all">Cancel</button>
+          <button onClick={handleSubmit} disabled={!form.plan_id || saving}
             className="flex-1 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-semibold transition-all shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2">
-            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isNew ? "Create Plan" : "Save Changes"}
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isNew ? "Create" : isUpgrade ? "Change Plan" : "Save Changes"}
           </button>
         </div>
       </div>
@@ -441,14 +404,6 @@ function MembershipModal({ data, onClose, onSave }) {
   );
 }
 
-// ─── FormField ────────────────────────────────────────────────────────────────
-const INPUT_CLS = "w-full px-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors appearance-none";
-
 function FormField({ label, children }) {
-  return (
-    <div>
-      <label className="block text-[12px] font-semibold text-text-3 mb-1.5 uppercase tracking-wide">{label}</label>
-      {children}
-    </div>
-  );
+  return (<div><label className="block text-[12px] font-semibold text-text-3 mb-1.5 uppercase tracking-wide">{label}</label>{children}</div>);
 }

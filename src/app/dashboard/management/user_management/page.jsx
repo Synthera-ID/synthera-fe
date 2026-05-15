@@ -11,8 +11,8 @@ import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ROLE_STYLES = {
-  admin: { bg: "bg-violet-500/20", text: "text-violet-400", border: "border-violet-500/30", icon: Crown },
-  member: { bg: "bg-bg-3", text: "text-text-3", border: "border-bg-3", icon: null },
+  ADMIN: { bg: "bg-violet-500/20", text: "text-violet-400", border: "border-violet-500/30", icon: Crown },
+  MEMBER: { bg: "bg-bg-3", text: "text-text-3", border: "border-bg-3", icon: null },
 };
 
 const STATUS_STYLES = {
@@ -85,7 +85,7 @@ export default function UserManagementPage() {
   // Stats
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.is_active).length;
-  const admins = users.filter((u) => u.role === "admin").length;
+  const admins = users.filter((u) => u.role?.toLowerCase() === "admin").length;
   const inactiveUsers = users.filter((u) => !u.is_active).length;
 
   function showNotification(msg, type = "success") {
@@ -212,8 +212,8 @@ export default function UserManagementPage() {
 
       {/* Table */}
       <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-visible">
-        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
-          <span>User</span><span>Email</span><span>Role</span><span>Status</span><span>Company</span><span />
+        <div className="hidden lg:grid grid-cols-[1.8fr_1.8fr_0.8fr_0.8fr_0.8fr_1.3fr_1.3fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+          <span>User</span><span>Email</span><span>Role</span><span>Status</span><span>Company</span><span>Created</span><span>Updated</span><span />
         </div>
 
         {loading ? (
@@ -228,8 +228,8 @@ export default function UserManagementPage() {
           </div>
         ) : (
           users.map((user, i) => {
-            const role = user.role || "member";
-            const roleStyle = ROLE_STYLES[role] ?? ROLE_STYLES.member;
+            const role = user.role || "MEMBER";
+            const roleStyle = ROLE_STYLES[role] ?? ROLE_STYLES.MEMBER;
             const isActive = !!user.is_active;
             const statusStyle = isActive ? STATUS_STYLES.active : STATUS_STYLES.inactive;
             const RoleIcon = roleStyle.icon;
@@ -237,7 +237,7 @@ export default function UserManagementPage() {
             return (
               <div
                 key={user.id}
-                className={`grid grid-cols-[2fr_2fr_1fr_1fr_1fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
+                className={`grid grid-cols-[1fr_44px] lg:grid-cols-[1.8fr_1.8fr_0.8fr_0.8fr_0.8fr_1.3fr_1.3fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
                   i < users.length - 1 ? "border-b border-bg-3/50" : ""
                 }`}
               >
@@ -253,27 +253,39 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Email */}
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="hidden lg:flex items-center gap-2 min-w-0">
                   <Mail size={13} className="text-text-3 shrink-0" />
                   <span className="text-[13px] text-text-2 truncate">{user.email}</span>
                 </div>
 
                 {/* Role */}
-                <span>
+                <div className="hidden lg:block">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border ${roleStyle.bg} ${roleStyle.text} ${roleStyle.border}`}>
                     {RoleIcon && <RoleIcon size={11} />}
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </span>
-                </span>
+                </div>
 
                 {/* Status */}
-                <div className="flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${statusStyle.dot} shrink-0`} />
                   <span className={`text-[12px] font-semibold ${statusStyle.text}`}>{statusStyle.label}</span>
                 </div>
 
                 {/* Company */}
-                <span className="text-[13px] text-text-2 font-medium truncate">{user.company_code || "-"}</span>
+                <span className="hidden lg:block text-[13px] text-text-2 font-medium truncate">{user.company_code || "-"}</span>
+
+                {/* Created */}
+                <div className="hidden lg:block">
+                  <div className="text-[11px] text-text-3">{formatDate(user.created_date || user.created_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{user.created_by || "-"}</div>
+                </div>
+
+                {/* Updated */}
+                <div className="hidden lg:block">
+                  <div className="text-[11px] text-text-3">{formatDate(user.last_updated_date || user.updated_at)}</div>
+                  <div className="text-[10px] text-text-3/60">{user.last_updated_by || "-"}</div>
+                </div>
 
                 {/* Action menu */}
                 <div className="relative flex justify-center">
@@ -421,8 +433,8 @@ function EditUserModal({ user, onClose, onSave }) {
           <FormField label="Role">
             <select value={form.role} onChange={(e) => handleChange("role", e.target.value)}
               className="w-full px-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 outline-none focus:border-primary-1/50 transition-colors appearance-none cursor-pointer">
-              <option value="admin">Admin</option>
-              <option value="member">Member</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MEMBER">Member</option>
             </select>
           </FormField>
 

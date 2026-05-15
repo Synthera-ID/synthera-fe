@@ -35,7 +35,7 @@ const NAV_ITEMS = [
   { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
   { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
   { label: "API Usage", href: "/dashboard/api_usage", icon: BarChart2, roles: ["ADMIN", "MEMBER"] },
-  { label: "Digital Content", href: "/dashboard/digital_content", icon: Grid, roles: ["ADMIN"] },
+
   { label: "General Information", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] },
 ];
 
@@ -45,6 +45,7 @@ const MANAGEMENT_ITEMS = [
   { label: "Transaction Management", href: "/dashboard/management/transaction_management", icon: Receipt },
   { label: "Subscription Management", href: "/dashboard/management/subscription_management", icon: BadgeCheck },
   { label: "Membership Management", href: "/dashboard/management/membership_management", icon: LayoutList },
+  { label: "Digital Content", href: "/dashboard/management/digital_content_management", icon: BookOpen },
 ];
 
 const MANAGEMENT_ROUTES = MANAGEMENT_ITEMS.map((i) => i.href);

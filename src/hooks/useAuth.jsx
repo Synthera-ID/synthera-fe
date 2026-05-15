@@ -46,6 +46,7 @@ export function AuthProvider({ children }) {
 
       if (res.ok) {
         const { data } = await res.json();
+        console.log(">>>", data);
         setUser(data);
 
         // Cek apakah 2FA required

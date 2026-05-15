@@ -36,11 +36,10 @@ function useBreadcrumbs(pathname) {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function DashboardNavbar({ onToggleSidebar, UserData }) {
+export default function DashboardNavbar({ onToggleSidebar, UserData, logout }) {
+  console.log(UserData);
   const pathname = usePathname();
-  const router = useRouter();
   const breadcrumbs = useBreadcrumbs(pathname);
-  const { logout } = useAuth();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -114,7 +113,7 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
       {/* ── Right: Avatar Dropdown ─────────────────────────────────────────── */}
       <div className="flex items-center gap-4">
         <ThemeToggle className="w-9 h-9" />
-        
+
         <div className="relative" ref={dropdownRef}>
           {/* Trigger button */}
           <button
@@ -127,9 +126,13 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
               active:scale-95
             "
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-1 to-primary-2 flex items-center justify-center text-[11px] font-bold text-white shadow-lg">
-              {UserData?.name?.charAt(0) || "U"}
-            </div>
+            {UserData && UserData?.avatar_url ? (
+              <img src={UserData.avatar_url} className="w-7 h-7 rounded-full shrink-0" alt="Avatar Profile" />
+            ) : (
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-1 to-primary-2 flex items-center justify-center text-[11px] font-bold text-white shadow-lg">
+                {UserData?.name?.charAt(0) || "U"}
+              </div>
+            )}
             <ChevronRight
               size={14}
               className={`text-[#6B7280] transition-transform duration-200 ${dropdownOpen ? "rotate-90" : ""}`}
@@ -144,9 +147,10 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
               rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.1)] dark:shadow-[0_24px_48px_rgba(0,0,0,0.6)]
               overflow-hidden
               transition-all duration-200
-              ${dropdownOpen
-                ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+              ${
+                dropdownOpen
+                  ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                  : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               }
             `}
           >
@@ -171,21 +175,6 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
                 <User size={16} />
                 My Profile
               </Link>
-
-              <Link
-                href="/dashboard/general_information"
-                onClick={() => setDropdownOpen(false)}
-                className="
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl
-                  text-[13px] text-slate-600 dark:text-[#9CA3AF]
-                  hover:text-primary-1 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#13131A]
-                  transition-all duration-200
-                "
-              >
-                <Info size={16} />
-                General Information
-              </Link>
-
               <button
                 onClick={handleLogout}
                 className="
@@ -202,7 +191,7 @@ export default function DashboardNavbar({ onToggleSidebar, UserData }) {
           </div>
         </div>
       </div>
-      
+
       <ConfirmationModal
         isOpen={isLogoutModalOpen}
         onCancel={() => setIsLogoutModalOpen(false)}

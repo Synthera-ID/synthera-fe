@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  ArrowUpDown, 
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
   History,
   Loader2,
   AlertCircle,
   FileText,
   User,
-  Calendar
+  Calendar,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
 import { formatRupiah, formatDate } from "@/utils/format";
@@ -30,7 +30,7 @@ export default function SubscriptionHistory() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Table states
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,7 +68,7 @@ export default function SubscriptionHistory() {
   const sortedData = [...data].sort((a, b) => {
     if (!a[sortConfig.key]) return 1;
     if (!b[sortConfig.key]) return -1;
-    
+
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === "asc" ? -1 : 1;
     }
@@ -128,38 +128,51 @@ export default function SubscriptionHistory() {
             <thead>
               <tr className="bg-bg-3/30 border-b border-bg-3">
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  <button onClick={() => handleSort("invoice_code")} className="flex items-center gap-2 hover:text-text-1 transition-colors">
+                  <button
+                    onClick={() => handleSort("invoice_code")}
+                    className="flex items-center gap-2 hover:text-text-1 transition-colors"
+                  >
                     Invoice
                     <ArrowUpDown size={12} />
                   </button>
                 </th>
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  <button onClick={() => handleSort("plan_name")} className="flex items-center gap-2 hover:text-text-1 transition-colors">
+                  <button
+                    onClick={() => handleSort("plan_name")}
+                    className="flex items-center gap-2 hover:text-text-1 transition-colors"
+                  >
                     Paket
                     <ArrowUpDown size={12} />
                   </button>
                 </th>
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  <button onClick={() => handleSort("amount")} className="flex items-center gap-2 hover:text-text-1 transition-colors">
+                  <button
+                    onClick={() => handleSort("amount")}
+                    className="flex items-center gap-2 hover:text-text-1 transition-colors"
+                  >
                     Jumlah
                     <ArrowUpDown size={12} />
                   </button>
                 </th>
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  <button onClick={() => handleSort("status")} className="flex items-center gap-2 hover:text-text-1 transition-colors">
+                  <button
+                    onClick={() => handleSort("status")}
+                    className="flex items-center gap-2 hover:text-text-1 transition-colors"
+                  >
                     Status
                     <ArrowUpDown size={12} />
                   </button>
                 </th>
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  <button onClick={() => handleSort("created_at")} className="flex items-center gap-2 hover:text-text-1 transition-colors">
+                  <button
+                    onClick={() => handleSort("created_at")}
+                    className="flex items-center gap-2 hover:text-text-1 transition-colors"
+                  >
                     Tanggal
                     <ArrowUpDown size={12} />
                   </button>
                 </th>
-                <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">
-                  Pembuat
-                </th>
+                <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">Pembuat</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-bg-3">
@@ -194,7 +207,7 @@ export default function SubscriptionHistory() {
                 currentItems.map((item, idx) => {
                   const status = item.status?.toLowerCase() || "pending";
                   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.pending;
-                  
+
                   return (
                     <tr key={item.id || idx} className="hover:bg-bg-3/20 transition-colors group">
                       <td className="px-6 py-4">
@@ -207,14 +220,21 @@ export default function SubscriptionHistory() {
                         <span className="text-primary-3 font-bold">{formatRupiah(item.amount)}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}
+                        >
                           {statusStyle.label}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="text-text-2">{formatDate(item.created_at)}</span>
-                          <span className="text-[10px] text-text-3">{new Date(item.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
+                          <span className="text-[10px] text-text-3">
+                            {new Date(item.created_at).toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -223,9 +243,13 @@ export default function SubscriptionHistory() {
                             <User size={12} className="text-text-3" />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-text-2 truncate text-[11px]">{item.created_by_name || item.created_by || "System"}</span>
+                            <span className="text-text-2 truncate text-[11px]">
+                              {item.created_by_name || item.created_by || "System"}
+                            </span>
                             {item.updated_at && item.updated_at !== item.created_at && (
-                              <span className="text-[9px] text-text-3 italic">Updated: {formatDate(item.updated_at)}</span>
+                              <span className="text-[9px] text-text-3 italic">
+                                Updated: {formatDate(item.updated_at)}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -242,7 +266,9 @@ export default function SubscriptionHistory() {
         {!loading && !error && filteredData.length > itemsPerPage && (
           <div className="px-6 py-4 bg-bg-3/10 border-t border-bg-3 flex items-center justify-between">
             <p className="text-[11px] text-text-3">
-              Menampilkan <span className="text-text-1 font-semibold">{indexOfFirstItem + 1}</span> sampai <span className="text-text-1 font-semibold">{Math.min(indexOfLastItem, filteredData.length)}</span> dari <span className="text-text-1 font-semibold">{filteredData.length}</span> transaksi
+              Menampilkan <span className="text-text-1 font-semibold">{indexOfFirstItem + 1}</span> sampai{" "}
+              <span className="text-text-1 font-semibold">{Math.min(indexOfLastItem, filteredData.length)}</span> dari{" "}
+              <span className="text-text-1 font-semibold">{filteredData.length}</span> transaksi
             </p>
             <div className="flex items-center gap-2">
               <button

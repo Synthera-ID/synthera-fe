@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function DashboardPage() {
   const { user } = useAuth();
 
+  console.log(user)
   return (
     <>
       <header className="mb-10">
