@@ -22,11 +22,11 @@ import {
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const PLATFORM_INFO = [
   { label: "Platform Name", value: "Synthera API Platform" },
-  { label: "Version", value: "v3.6.0" },
+  { label: "Version", value: "v3.5.0" },
   { label: "Environment", value: "Production" },
   { label: "Region", value: "Asia Pacific (ap-1)" },
   { label: "Base URL", value: "https://api.synthera.id/api", isCode: true },
-  { label: "Last Updated", value: "May 17, 2026" },
+  { label: "Last Updated", value: "May 15, 2026" },
 ];
 
 const SERVICE_STATUS = [
@@ -47,95 +47,31 @@ const RATE_LIMITS = [
 
 const CHANGELOG = [
   {
-    version: "v3.6.0",
-    date: "May 17, 2026",
-    type: "major",
-    tasks: [
-      "Feature Management CRUD — Full admin CRUD for Plan Features (PlanFeatureController), sidebar registration, and form modal with plan selector.",
-      "Digital Content Image Upload — Backend multipart/form-data support for thumbnail uploads with file storage in storage/app/public/thumbnails/.",
-      "Pricing Section Dynamic API — Pricing section on home page now fetches plans from GET /subscriptions public endpoint instead of static data.",
-      "Auth-Aware Navbar — Public navbar detects login state via cookie; shows Dashboard + Course links when logged in, hides Login/Register.",
-      "Pricing CTA Redirect — Pricing buttons redirect to /dashboard/subscription (logged in) or /login (not logged in).",
-    ],
-  },
-  {
-    version: "v3.5.2",
-    date: "May 17, 2026",
-    type: "patch",
-    tasks: [
-      "Fixed Sign Out modal clipped by sticky navbar — moved ConfirmationModal outside <header> stacking context.",
-      "Fixed Payment Management crash (Cannot read 'dot' of undefined) — getStatusStyle fallback referenced deleted STATUS_STYLES.pending key.",
-      "Fixed table action dropdown clipped — changed overflow-hidden to overflow-visible on payment_management and membership_management table containers.",
-      "Fixed navbar # anchor links not scrolling — replaced Next.js <Link> with scrollToSection using smooth scroll + 80px offset.",
-      "Fixed anchor links not working from /course — added cross-page navigation to /#section when not on home page.",
-    ],
-  },
-  {
-    version: "v3.5.1",
-    date: "May 17, 2026",
-    type: "minor",
-    tasks: [
-      "Action Column Layout Standardization — Moved action menu (⋯) from rightmost to leftmost column across all 5 management tables (Transaction, Payment, User, Membership, Feature).",
-      "Payment Status Standardization — Changed payment status values to 'active' / 'inactive' globally across UI, filters, and stat cards.",
-      "Sidebar Reorganization — Moved General Information below Management group, restricted to ADMIN role only.",
-      "Course Dashboard Redirect — Dashboard course entry now redirects to /course via server-side redirect.",
-    ],
-  },
-  {
     version: "v3.5.0",
     date: "May 15, 2026",
     type: "major",
-    tasks: [
-      "Full Management Dashboard — CRUD for Payment, Transaction, Subscription, Membership, and Digital Content (Course) Management.",
-      "Admin route protection with auth:sanctum + AdminMiddleware.",
-      "Audit fields (CreatedBy, CreatedDate, LastUpdateBy, LastUpdateDate) added across all modules.",
-      "Currency standardized to IDR (Rp).",
-    ],
+    notes: "Full Management Dashboard: CRUD for Payment, Transaction, Subscription, Membership, and Digital Content (Course) Management. Admin route protection with auth:sanctum + AdminMiddleware. Audit fields (CreatedBy, CreatedDate, LastUpdateBy, LastUpdateDate) added across all modules. Currency standardized to IDR (Rp).",
   },
   {
     version: "v3.4.2",
     date: "May 15, 2026",
     type: "patch",
-    tasks: [
-      "Fixed broken PaymentController update and TransactionController validation syntax error.",
-      "Fixed MembershipController wrong update fields.",
-      "Removed duplicate routes and exception stack trace leaks.",
-    ],
+    notes: "Fixed broken PaymentController update, TransactionController validation syntax error, MembershipController wrong update fields. Removed duplicate routes and exception stack trace leaks.",
   },
-  {
-    version: "v3.4.1",
-    date: "Apr 25, 2026",
-    type: "patch",
-    tasks: [
-      "Fixed edge case in 2FA token expiry validation.",
-    ],
-  },
+  { version: "v3.4.1", date: "Apr 25, 2026", type: "patch", notes: "Fixed edge case in 2FA token expiry validation." },
   {
     version: "v3.4.0",
     date: "Apr 10, 2026",
     type: "minor",
-    tasks: [
-      "Added webhook retry mechanism.",
-      "Improved latency on Content Delivery.",
-    ],
+    notes: "Added webhook retry mechanism and improved latency on Content Delivery.",
   },
   {
     version: "v3.3.0",
     date: "Mar 18, 2026",
     type: "minor",
-    tasks: [
-      "Introduced User Management API endpoints.",
-      "Added bulk operations support.",
-    ],
+    notes: "Introduced User Management API endpoints and bulk operations.",
   },
-  {
-    version: "v3.2.5",
-    date: "Feb 28, 2026",
-    type: "patch",
-    tasks: [
-      "Security patch for JWT refresh token rotation.",
-    ],
-  },
+  { version: "v3.2.5", date: "Feb 28, 2026", type: "patch", notes: "Security patch for JWT refresh token rotation." },
 ];
 
 const STATUS_STYLES = {
@@ -176,7 +112,7 @@ export default function GeneralInformationPage() {
           icon={<Globe size={20} className="text-violet-400" />}
           iconBg="bg-violet-500/20"
           label="API Version"
-          value="v3.6.0"
+          value="v3.5.0"
         />
         <StatCard
           icon={<Server size={20} className="text-blue-400" />}
@@ -291,9 +227,8 @@ export default function GeneralInformationPage() {
           return (
             <div
               key={plan}
-              className={`grid grid-cols-4 gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors ${
-                i < RATE_LIMITS.length - 1 ? "border-b border-bg-3/50" : ""
-              }`}
+              className={`grid grid-cols-4 gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors ${i < RATE_LIMITS.length - 1 ? "border-b border-bg-3/50" : ""
+                }`}
             >
               <span className={`text-[13px] font-bold ${isEnterprise ? "text-violet-400" : "text-text-1"}`}>
                 {plan}
@@ -352,31 +287,21 @@ export default function GeneralInformationPage() {
         </div>
 
         <div className="divide-y divide-bg-3/50">
-          {CHANGELOG.map(({ version, date, type, tasks }) => {
+          {CHANGELOG.map(({ version, date, type, notes }) => {
             const t = CHANGELOG_TYPE_STYLES[type] ?? CHANGELOG_TYPE_STYLES.patch;
             return (
-              <div key={version} className="flex items-start gap-4 px-6 py-5 hover:bg-bg-3/20 transition-colors">
+              <div key={version} className="flex items-start gap-4 px-6 py-4 hover:bg-bg-3/20 transition-colors">
                 <span
                   className={`mt-0.5 inline-block px-2.5 py-1 rounded-md text-[11px] font-bold border shrink-0 ${t.bg} ${t.text} ${t.border}`}
                 >
                   {t.label}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-1">
                     <span className="text-[13px] font-bold text-text-1">{version}</span>
                     <span className="text-[12px] text-text-3">{date}</span>
-                    <span className="text-[11px] text-text-3 bg-bg-3/50 px-2 py-0.5 rounded-full">
-                      {tasks?.length || 0} task{(tasks?.length || 0) !== 1 ? "s" : ""}
-                    </span>
                   </div>
-                  <ul className="space-y-1.5">
-                    {(tasks || []).map((task, ti) => (
-                      <li key={ti} className="flex items-start gap-2 text-[13px] text-text-2 leading-relaxed">
-                        <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{task}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-[13px] text-text-2 leading-relaxed">{notes}</p>
                 </div>
               </div>
             );

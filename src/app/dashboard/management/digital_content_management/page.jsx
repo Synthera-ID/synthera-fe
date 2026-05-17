@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  BookOpen, Search, Plus, MoreHorizontal,
+  BookOpen, Search, Plus,
   Check, AlertCircle, Loader2, X, Edit3,
   Trash2, Eye, TrendingUp, FileText, Globe, Upload,
 } from "lucide-react";
@@ -88,7 +88,6 @@ export default function DigitalContentManagementPage() {
       fd.append('title', form.title);
       fd.append('slug', form.slug);
       fd.append('description', form.description || '');
-      fd.append('price', form.price);
       if (form.category_id) fd.append('category_id', form.category_id);
       fd.append('min_tier', form.min_tier);
       if (form.video_url) fd.append('video_url', form.video_url);
@@ -185,7 +184,7 @@ export default function DigitalContentManagementPage() {
                 {/* Thumbnail */}
                 <div className="h-[140px] bg-gradient-to-br from-[#2A1B38] to-[#171321] flex items-center justify-center relative">
                   {c.thumbnail_url ? (
-                    <img src={c.thumbnail_url} alt={c.title} className="w-full h-full object-cover" />
+                    <img src={`https://api.synthera.id${c.thumbnail_url}`} alt={c.title} className="w-full h-full object-cover" />
                   ) : (
                     <BookOpen size={28} className="text-white/40" />
                   )}
@@ -209,11 +208,6 @@ export default function DigitalContentManagementPage() {
                   </div>
 
                   <p className="text-[12px] text-text-3 leading-relaxed line-clamp-2 mb-3">{c.description}</p>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[16px] font-bold text-text-1">{formatCurrency(c.price)}</span>
-                    <span className="text-[11px] text-text-3">{c.slug}</span>
-                  </div>
 
                   {/* Audit info */}
                   <div className="pt-3 border-t border-bg-3/50 space-y-1 mt-auto">
@@ -292,7 +286,6 @@ function CourseDetailModal({ course, onClose }) {
           <DetailRow label="Title" value={course.title} />
           <DetailRow label="Slug" value={course.slug} />
           <DetailRow label="Category" value={course.category?.name || "-"} />
-          <DetailRow label="Price" value={<span className="text-emerald-400 font-bold">{formatCurrency(course.price)}</span>} />
           <DetailRow label="Min Tier" value={<span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${tier.bg} ${tier.text} ${tier.border}`}>{tier.label}</span>} />
           <DetailRow label="Published" value={course.is_published ? "Yes" : "No"} />
           <DetailRow label="Video URL" value={course.video_url || "-"} />
@@ -351,11 +344,8 @@ function CourseModal({ data, onClose, onSave }) {
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Price (Rp)">
-              <input type="number" min={0} value={form.price} onChange={(e) => set("price", Number(e.target.value))} className={INPUT_CLS} />
-            </FormField>
             <FormField label="Category ID">
-              <input type="number" min={1} value={form.category_id} onChange={(e) => set("category_id", e.target.value)} className={INPUT_CLS} />
+              <input type="number" min={1} disabled value={form.category_id} onChange={(e) => set("category_id", e.target.value)} className={INPUT_CLS} />
             </FormField>
           </div>
 
@@ -375,7 +365,7 @@ function CourseModal({ data, onClose, onSave }) {
             <div className="space-y-3">
               {thumbnailPreview && (
                 <div className="relative rounded-xl overflow-hidden border border-bg-3 h-[140px]">
-                  <img src={thumbnailPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={`https://api.synthera.id${thumbnailPreview}`} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => { set("thumbnailFile", null); setThumbnailPreview(null); }}
