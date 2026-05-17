@@ -209,8 +209,9 @@ export default function TransactionManagementPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-hidden">
-        <div className="hidden lg:grid grid-cols-[1.8fr_1.8fr_1.2fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+      <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-visible">
+        <div className="hidden lg:grid grid-cols-[44px_1.8fr_1.8fr_1.2fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+          <span />
           <span>Invoice</span>
           <span>User</span>
           <span>Plan</span>
@@ -218,7 +219,6 @@ export default function TransactionManagementPage() {
           <span>Status</span>
           <span>Created</span>
           <span>Updated</span>
-          <span />
         </div>
 
         {loading ? (
@@ -237,10 +237,44 @@ export default function TransactionManagementPage() {
             return (
               <div
                 key={t.id}
-                className={`grid grid-cols-[1fr_44px] lg:grid-cols-[1.8fr_1.8fr_1.2fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
+                className={`grid grid-cols-[44px_1fr] lg:grid-cols-[44px_1.8fr_1.8fr_1.2fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
                   i < transactions.length - 1 ? "border-b border-bg-3/50" : ""
                 }`}
               >
+                {/* Action */}
+                <div className="relative flex justify-center">
+                  <button
+                    onClick={() => setActiveMenu(activeMenu === t.id ? null : t.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+
+                  {activeMenu === t.id && (
+                    <div className="absolute left-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
+                      <button
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                        onClick={() => { setDetailTx(t); setActiveMenu(null); }}
+                      >
+                        <Eye size={14} className="text-primary-3" /> View Detail
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                        onClick={() => { setEditTx(t); setActiveMenu(null); }}
+                      >
+                        <Edit3 size={14} className="text-amber-400" /> Update Status
+                      </button>
+                      <div className="border-t border-bg-3/60 my-0.5" />
+                      <button
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        onClick={() => { setDeleteTarget(t); setActiveMenu(null); }}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Invoice */}
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold text-text-1 truncate">{t.invoice_code}</div>
@@ -282,40 +316,6 @@ export default function TransactionManagementPage() {
                 <div className="hidden lg:block">
                   <div className="text-[11px] text-text-3">{formatDate(t.LastUpdateDate || t.updated_at)}</div>
                   <div className="text-[10px] text-text-3/60">{t.LastUpdateBy || "-"}</div>
-                </div>
-
-                {/* Action */}
-                <div className="relative flex justify-center">
-                  <button
-                    onClick={() => setActiveMenu(activeMenu === t.id ? null : t.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-
-                  {activeMenu === t.id && (
-                    <div className="absolute right-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                        onClick={() => { setDetailTx(t); setActiveMenu(null); }}
-                      >
-                        <Eye size={14} className="text-primary-3" /> View Detail
-                      </button>
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                        onClick={() => { setEditTx(t); setActiveMenu(null); }}
-                      >
-                        <Edit3 size={14} className="text-amber-400" /> Update Status
-                      </button>
-                      <div className="border-t border-bg-3/60 my-0.5" />
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
-                        onClick={() => { setDeleteTarget(t); setActiveMenu(null); }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             );

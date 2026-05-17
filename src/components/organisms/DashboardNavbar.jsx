@@ -70,6 +70,7 @@ export default function DashboardNavbar({ onToggleSidebar, UserData, logout }) {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-20 flex items-center justify-between h-[60px] px-4 md:px-6 bg-bg-2/95 backdrop-blur-md border-b border-bg-3 shrink-0">
       {/* ── Left: Hamburger + Breadcrumbs ─────────────────────────────────── */}
       <div className="flex items-center gap-3">
@@ -192,6 +193,8 @@ export default function DashboardNavbar({ onToggleSidebar, UserData, logout }) {
         </div>
       </div>
 
+    </header>
+
       <ConfirmationModal
         isOpen={isLogoutModalOpen}
         onCancel={() => setIsLogoutModalOpen(false)}
@@ -204,6 +207,6 @@ export default function DashboardNavbar({ onToggleSidebar, UserData, logout }) {
         isLoading={isLoggingOut}
         icon={LogOut}
       />
-    </header>
+    </>
   );
 }

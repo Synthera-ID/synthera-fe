@@ -24,6 +24,7 @@ import {
   Receipt,
   BadgeCheck,
   LayoutList,
+  Puzzle,
 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
@@ -35,9 +36,9 @@ const NAV_ITEMS = [
   { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard, roles: ["ADMIN", "MEMBER"] },
   { label: "API Keys", href: "/dashboard/api_keys", icon: Key, roles: ["ADMIN", "MEMBER"] },
   { label: "API Usage", href: "/dashboard/api_usage", icon: BarChart2, roles: ["ADMIN", "MEMBER"] },
-
-  { label: "General Information", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] },
 ];
+
+const GENERAL_INFO_ITEM = { label: "General Information", href: "/dashboard/general_information", icon: Info, roles: ["ADMIN"] };
 
 const MANAGEMENT_ITEMS = [
   { label: "User Management", href: "/dashboard/management/user_management", icon: Users },
@@ -45,6 +46,7 @@ const MANAGEMENT_ITEMS = [
   { label: "Transaction Management", href: "/dashboard/management/transaction_management", icon: Receipt },
   { label: "Subscription Management", href: "/dashboard/management/subscription_management", icon: BadgeCheck },
   { label: "Membership Management", href: "/dashboard/management/membership_management", icon: LayoutList },
+  { label: "Feature Management", href: "/dashboard/management/feature_management", icon: Puzzle },
   { label: "Digital Content", href: "/dashboard/management/digital_content_management", icon: BookOpen },
 ];
 
@@ -240,6 +242,15 @@ export default function DashboardSidebar({ isOpen = false, onClose, userRole = "
                 </div>
 
                 <ManagementGroup pathname={pathname} isOpen={isOpen} />
+
+                {/* General Information — after Management, ADMIN only */}
+                <div className="mt-1">
+                  <NavLink
+                    item={GENERAL_INFO_ITEM}
+                    isActive={pathname === GENERAL_INFO_ITEM.href}
+                    isOpen={isOpen}
+                  />
+                </div>
               </>
             )}
           </nav>

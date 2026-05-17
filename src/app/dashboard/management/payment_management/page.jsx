@@ -11,9 +11,8 @@ import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  pending: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400", label: "Pending" },
-  success: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Success" },
-  failed:  { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20", dot: "bg-rose-400", label: "Failed" },
+  active:   { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Active" },
+  inactive: { bg: "bg-rose-500/10",    text: "text-rose-400",    border: "border-rose-500/20",    dot: "bg-rose-400",    label: "Inactive" },
 };
 
 const METHOD_STYLES = {
@@ -23,7 +22,7 @@ const METHOD_STYLES = {
   qris:          { label: "QRIS",          color: "text-amber-400" },
 };
 
-const STATUS_FILTERS = ["All", "Pending", "Success", "Failed"];
+const STATUS_FILTERS = ["All", "Active", "Inactive"];
 
 const INPUT_CLS = "w-full px-4 py-2.5 bg-bg-3/50 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 outline-none focus:border-primary-1/50 transition-colors appearance-none";
 
@@ -39,7 +38,7 @@ function formatCurrency(amount) {
 }
 
 function getStatusStyle(status) {
-  return STATUS_STYLES[status?.toLowerCase()] ?? STATUS_STYLES.pending;
+  return STATUS_STYLES[status?.toLowerCase()] ?? STATUS_STYLES.active;
 }
 
 function getMethodLabel(method) {
@@ -51,7 +50,7 @@ const EMPTY_FORM = {
   payment_code: "",
   payment_gateway: "DuitKu",
   min_amount: 0,
-  payment_status: "pending",
+  payment_status: "active",
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -90,9 +89,8 @@ export default function PaymentManagementPage() {
 
   // Stats
   const totalPayments = payments.length;
-  const totalSuccess = payments.filter((p) => p.payment_status === "success").length;
-  const totalPending = payments.filter((p) => p.payment_status === "pending").length;
-  const totalFailed = payments.filter((p) => p.payment_status === "failed").length;
+  const totalActive = payments.filter((p) => p.payment_status === "active").length;
+  const totalInactive = payments.filter((p) => p.payment_status === "inactive").length;
 
   function showNotification(msg, type = "success") {
     setNotification({ msg, type });
@@ -150,11 +148,10 @@ export default function PaymentManagementPage() {
       </header>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
         <StatCard icon={<CreditCard size={20} className="text-violet-400" />} iconBg="bg-violet-500/20" label="Total Methods" value={totalPayments} />
-        <StatCard icon={<TrendingUp size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Success" value={totalSuccess} />
-        <StatCard icon={<Clock size={20} className="text-amber-400" />} iconBg="bg-amber-500/20" label="Pending" value={totalPending} />
-        <StatCard icon={<XCircle size={20} className="text-rose-400" />} iconBg="bg-rose-500/20" label="Failed" value={totalFailed} />
+        <StatCard icon={<TrendingUp size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Active" value={totalActive} />
+        <StatCard icon={<XCircle size={20} className="text-rose-400" />} iconBg="bg-rose-500/20" label="Inactive" value={totalInactive} />
       </div>
 
       {/* Filters */}
@@ -187,8 +184,9 @@ export default function PaymentManagementPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-hidden">
-        <div className="hidden md:grid grid-cols-[1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+      <div className="bg-bg-2 border border-bg-3 rounded-2xl overflow-visible">
+        <div className="hidden md:grid grid-cols-[44px_1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-3.5 bg-bg-3/30 text-[11px] font-bold text-text-3 uppercase tracking-widest border-b border-bg-3">
+          <span />
           <span>Method</span>
           <span>Code</span>
           <span>Gateway</span>
@@ -196,7 +194,6 @@ export default function PaymentManagementPage() {
           <span>Status</span>
           <span>Created</span>
           <span>Updated</span>
-          <span />
         </div>
 
         {loading ? (
@@ -216,10 +213,38 @@ export default function PaymentManagementPage() {
             return (
               <div
                 key={p.id}
-                className={`grid grid-cols-[1fr_44px] md:grid-cols-[1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr_44px] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
+                className={`grid grid-cols-[44px_1fr] md:grid-cols-[44px_1.5fr_1.5fr_1.5fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 items-center hover:bg-bg-3/20 transition-colors relative ${
                   i < payments.length - 1 ? "border-b border-bg-3/50" : ""
                 }`}
               >
+                {/* Action */}
+                <div className="relative flex justify-center">
+                  <button
+                    onClick={() => setActiveMenu(activeMenu === p.id ? null : p.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+
+                  {activeMenu === p.id && (
+                    <div className="absolute left-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
+                      <button
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                        onClick={() => { setModalData({ ...p, isNew: false }); setActiveMenu(null); }}
+                      >
+                        <Edit3 size={14} className="text-primary-3" /> Edit Method
+                      </button>
+                      <div className="border-t border-bg-3/60 my-0.5" />
+                      <button
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        onClick={() => { setDeleteTarget(p); setActiveMenu(null); }}
+                      >
+                        <Trash2 size={14} /> Delete Method
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Method */}
                 <div className="min-w-0">
                   <div className={`text-[13px] font-semibold ${mt.color}`}>{mt.label}</div>
@@ -252,34 +277,6 @@ export default function PaymentManagementPage() {
                 <div className="hidden md:block">
                   <div className="text-[11px] text-text-3">{formatDate(p.LastUpdateDate || p.updated_at)}</div>
                   <div className="text-[10px] text-text-3/60">{p.LastUpdateBy || "-"}</div>
-                </div>
-
-                {/* Action */}
-                <div className="relative flex justify-center">
-                  <button
-                    onClick={() => setActiveMenu(activeMenu === p.id ? null : p.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-
-                  {activeMenu === p.id && (
-                    <div className="absolute right-0 top-10 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                        onClick={() => { setModalData({ ...p, isNew: false }); setActiveMenu(null); }}
-                      >
-                        <Edit3 size={14} className="text-primary-3" /> Edit Method
-                      </button>
-                      <div className="border-t border-bg-3/60 my-0.5" />
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-rose-400 hover:bg-rose-500/10 transition-colors"
-                        onClick={() => { setDeleteTarget(p); setActiveMenu(null); }}
-                      >
-                        <Trash2 size={14} /> Delete Method
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -398,9 +395,8 @@ function PaymentModal({ data, onClose, onSave }) {
 
           <FormField label="Status">
             <select value={form.payment_status} onChange={(e) => set("payment_status", e.target.value)} className={INPUT_CLS}>
-              <option value="pending">Pending</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </FormField>
         </div>

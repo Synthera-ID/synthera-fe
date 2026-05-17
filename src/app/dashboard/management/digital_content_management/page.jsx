@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   BookOpen, Search, Plus, MoreHorizontal,
   Check, AlertCircle, Loader2, X, Edit3,
-  Trash2, Eye, TrendingUp, FileText, Globe,
+  Trash2, Eye, TrendingUp, FileText, Globe, Upload,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
@@ -84,17 +84,27 @@ export default function DigitalContentManagementPage() {
 
   async function handleSave(form) {
     try {
-      const payload = { ...form };
-      delete payload.isNew;
-      delete payload.id;
-      delete payload.category;
+      const fd = new FormData();
+      fd.append('title', form.title);
+      fd.append('slug', form.slug);
+      fd.append('description', form.description || '');
+      fd.append('price', form.price);
+      if (form.category_id) fd.append('category_id', form.category_id);
+      fd.append('min_tier', form.min_tier);
+      if (form.video_url) fd.append('video_url', form.video_url);
+      fd.append('is_published', form.is_published ? '1' : '0');
+      if (form.thumbnailFile) {
+        fd.append('thumbnail', form.thumbnailFile);
+      }
 
       if (form.isNew) {
-        const res = await apiFetch.post("/admin/courses", payload);
+        const res = await apiFetch.upload("/admin/courses", fd, "POST");
         setCourses((prev) => [res.data?.data || res.data, ...prev]);
         showNotif("Course created.");
       } else {
-        const res = await apiFetch.put(`/admin/courses/${form.id}`, payload);
+        // Laravel doesn't support PUT with FormData well, use POST with _method override
+        fd.append('_method', 'PUT');
+        const res = await apiFetch.upload(`/admin/courses/${form.id}`, fd, "POST");
         setCourses((prev) => prev.map((c) => (c.id === form.id ? (res.data?.data || res.data) : c)));
         showNotif("Course updated.");
       }
@@ -302,10 +312,19 @@ function CourseDetailModal({ course, onClose }) {
 // ─── Create / Edit Modal ──────────────────────────────────────────────────────
 function CourseModal({ data, onClose, onSave }) {
   const isNew = !!data.isNew;
-  const [form, setForm] = useState({ ...data });
+  const [form, setForm] = useState({ ...data, thumbnailFile: null });
   const [saving, setSaving] = useState(false);
+  const [thumbnailPreview, setThumbnailPreview] = useState(data.thumbnail_url || null);
 
   function set(field, value) { setForm((p) => ({ ...p, [field]: value })); }
+
+  function handleThumbnailChange(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+      set("thumbnailFile", file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  }
 
   async function handleSubmit() {
     if (!form.title.trim()) return;
@@ -352,8 +371,28 @@ function CourseModal({ data, onClose, onSave }) {
             <textarea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Course description…" className={`${INPUT_CLS} resize-none`} />
           </FormField>
 
-          <FormField label="Thumbnail URL">
-            <input type="text" value={form.thumbnail_url || ""} onChange={(e) => set("thumbnail_url", e.target.value)} placeholder="https://..." className={INPUT_CLS} />
+          <FormField label="Thumbnail / Banner">
+            <div className="space-y-3">
+              {thumbnailPreview && (
+                <div className="relative rounded-xl overflow-hidden border border-bg-3 h-[140px]">
+                  <img src={thumbnailPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { set("thumbnailFile", null); setThumbnailPreview(null); }}
+                    className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 transition-all"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+              <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-bg-3 hover:border-primary-1/40 bg-bg-3/30 cursor-pointer transition-all group">
+                <Upload size={18} className="text-text-3 group-hover:text-primary-3 transition-colors" />
+                <span className="text-[13px] text-text-3 group-hover:text-text-1 transition-colors">
+                  {form.thumbnailFile ? form.thumbnailFile.name : "Click to upload image (JPG, PNG, WebP, max 2MB)"}
+                </span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleThumbnailChange} className="hidden" />
+              </label>
+            </div>
           </FormField>
 
           <FormField label="Video URL">

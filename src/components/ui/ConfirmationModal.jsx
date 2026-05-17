@@ -53,7 +53,7 @@ export default function ConfirmationModal({
 
       {/* Modal Container */}
       <div 
-        className={`relative bg-bg-2 border border-bg-3 rounded-[32px] p-8 w-full max-w-sm shadow-2xl overflow-hidden transition-all duration-300 transform ${
+        className={`relative bg-bg-2 border border-bg-3 rounded-[32px] p-8 w-full max-w-sm shadow-2xl transition-all duration-300 transform ${
           isOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
         }`}
       >

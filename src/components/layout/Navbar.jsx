@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/atoms/ThemeToggle";
 import { useTheme } from "next-themes";
+import { getCookie } from "@/utils/cookie";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,9 +14,29 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  function scrollToSection(id) {
+    setIsMenuOpen(false);
+    // If not on the home page, navigate to home with hash
+    if (window.location.pathname !== "/") {
+      router.push(`/#${id}`);
+      return;
+    }
+    const el = document.getElementById(id);
+    if (el) {
+      const offset = 80; // navbar height
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  }
 
   useEffect(() => {
     setMounted(true);
+    // Check if user has a valid access token
+    const token = getCookie("userAccessToken");
+    setIsLoggedIn(!!token);
   }, []);
 
   const isDarkMode = mounted ? theme === "dark" : true;
@@ -50,6 +72,9 @@ export default function Navbar() {
   const loginButtonStyles = isDarkMode
     ? "text-white border border-white/20 bg-transparent hover:bg-white/5"
     : "text-slate-950 border border-slate-200 bg-white hover:bg-slate-100";
+  const dashboardButtonStyles = isDarkMode
+    ? "text-white border border-primary-1/40 bg-primary-1/10 hover:bg-primary-1/20"
+    : "text-primary-1 border border-primary-1/30 bg-primary-1/5 hover:bg-primary-1/10";
   const mobileMenuBg = isDarkMode ? "bg-slate-950/95" : "bg-white/95";
   const mobileLink = isDarkMode ? "text-gray-300 hover:text-white" : "text-slate-700 hover:text-slate-950";
 
@@ -82,29 +107,49 @@ export default function Navbar() {
           </button>
 
           {/* 3. Menu Navigasi Desktop */}
-          <div className="hidden md:flex items-center gap-7 text-[13px] font-medium"
-            >
-            <Link href="#features" className={`${navLink} transition-colors`}>
+          <div className="hidden md:flex items-center gap-7 text-[13px] font-medium">
+            <button onClick={() => scrollToSection("features")} className={`${navLink} transition-colors`}>
               Features
-            </Link>
-            <Link href="#pricing" className={`${navLink} transition-colors`}>
+            </button>
+            <button onClick={() => scrollToSection("pricing")} className={`${navLink} transition-colors`}>
               Pricing
-            </Link>
-            <Link href="#faq" className={`${navLink} transition-colors`}>
+            </button>
+            <button onClick={() => scrollToSection("faq")} className={`${navLink} transition-colors`}>
               FAQ
-            </Link>
-            <Link href="/register" className={`${navLink} transition-colors`}>
-              Register
-            </Link>
+            </button>
+
+            {isLoggedIn ? (
+              <>
+                <Link href="/course" className={`${navLink} transition-colors`}>
+                  Course
+                </Link>
+                <Link href="/dashboard" className={`${navLink} transition-colors`}>
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <Link href="/register" className={`${navLink} transition-colors`}>
+                Register
+              </Link>
+            )}
           </div>
 
-          {/* 4. Tombol Login */}
-          <Link
-            href="/login"
-            className={`hidden md:inline-block text-[13px] font-medium px-5 py-1.5 rounded-lg transition-all ${loginButtonStyles}`}
-          >
-            Login
-          </Link>
+          {/* 4. Tombol Login / Dashboard */}
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className={`hidden md:inline-block text-[13px] font-medium px-5 py-1.5 rounded-lg transition-all ${dashboardButtonStyles}`}
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className={`hidden md:inline-block text-[13px] font-medium px-5 py-1.5 rounded-lg transition-all ${loginButtonStyles}`}
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
 
@@ -115,45 +160,68 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-[1440px] mx-auto px-10 md:px-20 flex flex-col gap-4">
-          <Link
-            href="#features"
-            onClick={() => setIsMenuOpen(false)}
-            className={`text-sm font-medium ${mobileLink} transition-colors`}
+          <button
+            onClick={() => scrollToSection("features")}
+            className={`text-left text-sm font-medium ${mobileLink} transition-colors`}
           >
             Features
-          </Link>
-          <Link
-            href="#pricing"
-            onClick={() => setIsMenuOpen(false)}
-            className={`text-sm font-medium ${mobileLink} transition-colors`}
+          </button>
+          <button
+            onClick={() => scrollToSection("pricing")}
+            className={`text-left text-sm font-medium ${mobileLink} transition-colors`}
           >
             Pricing
-          </Link>
-          <Link
-            href="#faq"
-            onClick={() => setIsMenuOpen(false)}
-            className={`text-sm font-medium ${mobileLink} transition-colors`}
+          </button>
+          <button
+            onClick={() => scrollToSection("faq")}
+            className={`text-left text-sm font-medium ${mobileLink} transition-colors`}
           >
             FAQ
-          </Link>
-          <Link
-            href="/register"
-            onClick={() => setIsMenuOpen(false)}
-            className={`text-sm font-medium ${mobileLink} transition-colors`}
-          >
-            Register
-          </Link>
-          <Link
-            href="/login"
-            onClick={() => setIsMenuOpen(false)}
-            className={`text-sm font-medium px-5 py-2 rounded-lg border transition-all ${
-              isDarkMode
-                ? "text-white border-white/20 bg-white/5 hover:bg-white/10"
-                : "text-slate-950 border-slate-200 bg-white hover:bg-slate-100"
-            }`}
-          >
-            Login
-          </Link>
+          </button>
+
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/course"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-sm font-medium ${mobileLink} transition-colors`}
+              >
+                Course
+              </Link>
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-sm font-medium px-5 py-2 rounded-lg border transition-all ${
+                  isDarkMode
+                    ? "text-white border-primary-1/40 bg-primary-1/10 hover:bg-primary-1/20"
+                    : "text-primary-1 border-primary-1/30 bg-primary-1/5 hover:bg-primary-1/10"
+                }`}
+              >
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-sm font-medium ${mobileLink} transition-colors`}
+              >
+                Register
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-sm font-medium px-5 py-2 rounded-lg border transition-all ${
+                  isDarkMode
+                    ? "text-white border-white/20 bg-white/5 hover:bg-white/10"
+                    : "text-slate-950 border-slate-200 bg-white hover:bg-slate-100"
+                }`}
+              >
+                Login
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

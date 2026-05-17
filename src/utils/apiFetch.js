@@ -86,6 +86,38 @@ const apiFetch = {
       method: "DELETE",
     });
   },
+
+  /**
+   * Upload FormData (multipart/form-data).
+   * Does NOT set Content-Type so the browser can set the boundary automatically.
+   */
+  async upload(endpoint, formData, method = "POST") {
+    const token = getCookie("userAccessToken");
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    if (res.status === 401) {
+      removeCookie("userAccessToken");
+      if (typeof window !== "undefined") window.location.href = "/login";
+      return null;
+    }
+
+    const contentType = res.headers.get("content-type");
+    const data = contentType?.includes("application/json") ? await res.json() : await res.text();
+
+    if (!res.ok) {
+      throw { status: res.status, data };
+    }
+
+    return data;
+  },
 };
 
 export default apiFetch;
