@@ -12,9 +12,13 @@ import {
   FileText,
   User,
   Calendar,
+  MoreHorizontal,
+  CreditCard,
+  Eye,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
 import { formatRupiah, formatDate } from "@/utils/format";
+import PaymentModal from "@/components/organisms/PaymentModal";
 
 const STATUS_STYLES = {
   success: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "Success" },
@@ -36,6 +40,23 @@ export default function SubscriptionHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [sortConfig, setSortConfig] = useState({ key: "created_at", direction: "desc" });
+
+  // Action / Payment states
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [paymentTx, setPaymentTx] = useState(null);
+  const [loadingTxId, setLoadingTxId] = useState(null);
+  const [notification, setNotif] = useState(null);
+
+  const showNotif = (msg, type = "success") => {
+    setNotif({ msg, type });
+    setTimeout(() => setNotif(null), 3000);
+  };
+
+  useEffect(() => {
+    const handleOutsideClick = () => setActiveMenu(null);
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -173,12 +194,13 @@ export default function SubscriptionHistory() {
                   </button>
                 </th>
                 <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px]">Pembuat</th>
+                <th className="px-6 py-4 font-bold text-text-3 uppercase tracking-wider text-[10px] text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-bg-3">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center">
+                  <td colSpan="7" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Loader2 size={24} className="animate-spin text-primary-3" />
                       <span className="text-text-3">Memuat riwayat...</span>
@@ -187,7 +209,7 @@ export default function SubscriptionHistory() {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center">
+                  <td colSpan="7" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3 text-red-400">
                       <AlertCircle size={24} />
                       <span>{error}</span>
@@ -196,7 +218,7 @@ export default function SubscriptionHistory() {
                 </tr>
               ) : currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center">
+                  <td colSpan="7" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3 text-text-3">
                       <FileText size={24} className="opacity-20" />
                       <span>Tidak ada data transaksi.</span>
@@ -205,7 +227,7 @@ export default function SubscriptionHistory() {
                 </tr>
               ) : (
                 currentItems.map((item, idx) => {
-                  const status = item.status?.toLowerCase() || "pending";
+                  const status = (item.status || item.transaction_status || "pending").toLowerCase();
                   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.pending;
 
                   return (
@@ -252,6 +274,99 @@ export default function SubscriptionHistory() {
                               </span>
                             )}
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="relative inline-block text-left">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenu(activeMenu === item.id ? null : item.id);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:bg-bg-3 hover:text-text-1 transition-all"
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
+
+                          {activeMenu === item.id && (
+                            <div className="absolute right-0 mt-1.5 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                              {status === "pending" ? (
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setActiveMenu(null);
+                                    setLoadingTxId(item.id);
+                                    try {
+                                      let res;
+                                      try {
+                                        res = await apiFetch.get(`/transactions/${item.id}`);
+                                      } catch (err) {
+                                        console.log("Plural fetch failed, trying singular...", err);
+                                        res = await apiFetch.get(`/transaction/${item.id}`);
+                                      }
+                                      const txData = res?.data || res;
+                                      if (txData) {
+                                        setPaymentTx(txData);
+                                      } else {
+                                        showNotif("Gagal mendapatkan detail pembayaran.", "error");
+                                      }
+                                    } catch (err) {
+                                      console.error("Fetch detail failed:", err);
+                                      showNotif(err?.data?.message || "Gagal mendapatkan detail pembayaran.", "error");
+                                    } finally {
+                                      setLoadingTxId(null);
+                                    }
+                                  }}
+                                  disabled={loadingTxId === item.id}
+                                >
+                                  {loadingTxId === item.id ? (
+                                    <Loader2 size={14} className="animate-spin text-primary-3 animate-pulse" />
+                                  ) : (
+                                    <CreditCard size={14} className="text-primary-3" />
+                                  )}
+                                  <span>Bayar Sekarang</span>
+                                </button>
+                              ) : (
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setActiveMenu(null);
+                                    setLoadingTxId(item.id);
+                                    try {
+                                      let res;
+                                      try {
+                                        res = await apiFetch.get(`/transactions/${item.id}`);
+                                      } catch (err) {
+                                        console.log("Plural fetch failed, trying singular...", err);
+                                        res = await apiFetch.get(`/transaction/${item.id}`);
+                                      }
+                                      const txData = res?.data || res;
+                                      if (txData) {
+                                        setPaymentTx(txData);
+                                      } else {
+                                        showNotif("Gagal mendapatkan detail transaksi.", "error");
+                                      }
+                                    } catch (err) {
+                                      console.error("Fetch detail failed:", err);
+                                      showNotif(err?.data?.message || "Gagal mendapatkan detail transaksi.", "error");
+                                    } finally {
+                                      setLoadingTxId(null);
+                                    }
+                                  }}
+                                  disabled={loadingTxId === item.id}
+                                >
+                                  {loadingTxId === item.id ? (
+                                    <Loader2 size={14} className="animate-spin text-text-3" />
+                                  ) : (
+                                    <Eye size={14} className="text-text-3" />
+                                  )}
+                                  <span>Lihat Detail</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

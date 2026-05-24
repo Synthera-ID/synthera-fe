@@ -38,7 +38,7 @@ function formatCurrency(amount) {
 }
 
 function getStatusStyle(status) {
-  return STATUS_STYLES[status?.toLowerCase()] ?? STATUS_STYLES.active;
+  return status ? STATUS_STYLES.active : STATUS_STYLES.inactive;
 }
 
 function getMethodLabel(method) {
