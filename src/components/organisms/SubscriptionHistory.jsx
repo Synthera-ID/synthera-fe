@@ -15,10 +15,14 @@ import {
   MoreHorizontal,
   CreditCard,
   Eye,
+  Download,
+  FileDown,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
 import { formatRupiah, formatDate } from "@/utils/format";
 import PaymentModal from "@/components/organisms/PaymentModal";
+import { downloadInvoice, downloadAllInvoicesAsZip } from "@/utils/invoiceGenerator";
+import { useAuth } from "@/hooks/useAuth";
 
 const STATUS_STYLES = {
   success: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "Success" },
@@ -31,6 +35,7 @@ const STATUS_STYLES = {
 };
 
 export default function SubscriptionHistory() {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,10 +51,84 @@ export default function SubscriptionHistory() {
   const [paymentTx, setPaymentTx] = useState(null);
   const [loadingTxId, setLoadingTxId] = useState(null);
   const [notification, setNotif] = useState(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const showNotif = (msg, type = "success") => {
     setNotif({ msg, type });
     setTimeout(() => setNotif(null), 3000);
+  };
+
+  // Download single invoice handler
+  const handleDownloadInvoice = async (transaction) => {
+    setDownloadingId(transaction.id);
+    try {
+      // Fetch full transaction details if needed
+      let fullTransaction = transaction;
+      if (!transaction.customer_name || !transaction.customer_email) {
+        try {
+          const res = await apiFetch.get(`/transactions/${transaction.id}`);
+          fullTransaction = res?.data || transaction;
+        } catch (err) {
+          console.log("Could not fetch full details, using existing data");
+        }
+      }
+      
+      // Enrich with user data
+      const enrichedTransaction = {
+        ...fullTransaction,
+        customer_name: fullTransaction.customer_name || user?.name || user?.full_name || "Customer",
+        customer_email: fullTransaction.customer_email || user?.email || "-",
+        user: user,
+      };
+      
+      downloadInvoice(enrichedTransaction);
+      showNotif("Invoice berhasil didownload!", "success");
+    } catch (error) {
+      console.error("Download invoice error:", error);
+      showNotif("Gagal mendownload invoice.", "error");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  // Download all invoices handler
+  const handleDownloadAllInvoices = async () => {
+    if (filteredData.length === 0) {
+      showNotif("Tidak ada invoice untuk didownload.", "error");
+      return;
+    }
+
+    setDownloadingAll(true);
+    try {
+      // Filter only successful transactions
+      const successfulTransactions = filteredData.filter((tx) => {
+        const status = (tx.status || tx.transaction_status || "").toLowerCase();
+        return status === "success" || status === "paid" || status === "completed";
+      });
+
+      if (successfulTransactions.length === 0) {
+        showNotif("Tidak ada transaksi yang berhasil untuk didownload.", "error");
+        setDownloadingAll(false);
+        return;
+      }
+
+      // Enrich all transactions with user data
+      const enrichedTransactions = successfulTransactions.map((tx) => ({
+        ...tx,
+        customer_name: tx.customer_name || user?.name || user?.full_name || "Customer",
+        customer_email: tx.customer_email || user?.email || "-",
+        user: user,
+      }));
+
+      await downloadAllInvoicesAsZip(enrichedTransactions);
+      showNotif(`${successfulTransactions.length} invoice berhasil didownload!`, "success");
+    } catch (error) {
+      console.error("Download all invoices error:", error);
+      showNotif("Gagal mendownload semua invoice.", "error");
+    } finally {
+      setDownloadingAll(false);
+    }
   };
 
   useEffect(() => {
@@ -60,14 +139,26 @@ export default function SubscriptionHistory() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       // Assuming /transactions returns current user's history
       const res = await apiFetch.get("/transactions");
-      setData(res.data || []);
-      setError(null);
+      const transactions = res?.data || res || [];
+      setData(Array.isArray(transactions) ? transactions : []);
     } catch (err) {
       console.error("Failed to fetch history:", err);
-      setError("Gagal memuat riwayat transaksi.");
+      // Handle different error cases
+      if (err?.status === 404) {
+        // No transactions found - not an error
+        setData([]);
+      } else if (err?.status === 401) {
+        // Unauthorized - will be handled by apiFetch (redirect to login)
+        setData([]);
+      } else {
+        // Other errors - show error message but don't crash
+        setData([]);
+        setError("Gagal memuat riwayat transaksi. Silakan refresh halaman.");
+      }
     } finally {
       setLoading(false);
     }
@@ -119,6 +210,19 @@ export default function SubscriptionHistory() {
 
   return (
     <div className="mt-12 space-y-6">
+      {/* Notification Toast */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl border shadow-lg animate-in slide-in-from-top-2 fade-in duration-200 ${
+            notification.type === "success"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              : "bg-red-500/10 border-red-500/20 text-red-400"
+          }`}
+        >
+          <p className="text-[13px] font-medium">{notification.msg}</p>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 className="text-[18px] font-bold flex items-center gap-2">
@@ -128,18 +232,39 @@ export default function SubscriptionHistory() {
           <p className="text-text-3 text-[12px] mt-1">Daftar transaksi subscription yang pernah Anda lakukan.</p>
         </div>
 
-        <div className="relative w-full md:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-          <input
-            type="text"
-            placeholder="Cari invoice atau paket..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-4 py-2 bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 focus:border-primary-1/50 transition-all outline-none"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full md:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
+            <input
+              type="text"
+              placeholder="Cari invoice atau paket..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2 bg-bg-2 border border-bg-3 rounded-xl text-[13px] text-text-1 placeholder:text-text-3 focus:border-primary-1/50 transition-all outline-none"
+            />
+          </div>
+
+          {/* Download All Button */}
+          <button
+            onClick={handleDownloadAllInvoices}
+            disabled={downloadingAll || loading || filteredData.length === 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-1 text-white text-[13px] font-semibold hover:bg-primary-2 transition-all shadow-lg shadow-primary-1/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            {downloadingAll ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Downloading...</span>
+              </>
+            ) : (
+              <>
+                <FileDown size={14} />
+                <span>Download Semua</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -289,82 +414,106 @@ export default function SubscriptionHistory() {
                           </button>
 
                           {activeMenu === item.id && (
-                            <div className="absolute right-0 mt-1.5 z-50 w-44 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="absolute right-0 mt-1.5 z-50 w-48 bg-bg-2 border border-bg-3 rounded-xl shadow-2xl shadow-black/40 overflow-hidden text-left animate-in fade-in slide-in-from-top-2 duration-150">
                               {status === "pending" ? (
-                                <button
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setActiveMenu(null);
-                                    setLoadingTxId(item.id);
-                                    try {
-                                      let res;
+                                <>
+                                  <button
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setActiveMenu(null);
+                                      setLoadingTxId(item.id);
                                       try {
-                                        res = await apiFetch.get(`/transactions/${item.id}`);
+                                        let res;
+                                        try {
+                                          res = await apiFetch.get(`/transactions/${item.id}`);
+                                        } catch (err) {
+                                          console.log("Plural fetch failed, trying singular...", err);
+                                          res = await apiFetch.get(`/transaction/${item.id}`);
+                                        }
+                                        const txData = res?.data || res;
+                                        if (txData) {
+                                          setPaymentTx(txData);
+                                        } else {
+                                          showNotif("Gagal mendapatkan detail pembayaran.", "error");
+                                        }
                                       } catch (err) {
-                                        console.log("Plural fetch failed, trying singular...", err);
-                                        res = await apiFetch.get(`/transaction/${item.id}`);
+                                        console.error("Fetch detail failed:", err);
+                                        showNotif(err?.data?.message || "Gagal mendapatkan detail pembayaran.", "error");
+                                      } finally {
+                                        setLoadingTxId(null);
                                       }
-                                      const txData = res?.data || res;
-                                      if (txData) {
-                                        setPaymentTx(txData);
-                                      } else {
-                                        showNotif("Gagal mendapatkan detail pembayaran.", "error");
-                                      }
-                                    } catch (err) {
-                                      console.error("Fetch detail failed:", err);
-                                      showNotif(err?.data?.message || "Gagal mendapatkan detail pembayaran.", "error");
-                                    } finally {
-                                      setLoadingTxId(null);
-                                    }
-                                  }}
-                                  disabled={loadingTxId === item.id}
-                                >
-                                  {loadingTxId === item.id ? (
-                                    <Loader2 size={14} className="animate-spin text-primary-3 animate-pulse" />
-                                  ) : (
-                                    <CreditCard size={14} className="text-primary-3" />
-                                  )}
-                                  <span>Bayar Sekarang</span>
-                                </button>
+                                    }}
+                                    disabled={loadingTxId === item.id}
+                                  >
+                                    {loadingTxId === item.id ? (
+                                      <Loader2 size={14} className="animate-spin text-primary-3 animate-pulse" />
+                                    ) : (
+                                      <CreditCard size={14} className="text-primary-3" />
+                                    )}
+                                    <span>Bayar Sekarang</span>
+                                  </button>
+                                  <div className="border-t border-bg-3" />
+                                </>
                               ) : (
-                                <button
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setActiveMenu(null);
-                                    setLoadingTxId(item.id);
-                                    try {
-                                      let res;
+                                <>
+                                  <button
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setActiveMenu(null);
+                                      setLoadingTxId(item.id);
                                       try {
-                                        res = await apiFetch.get(`/transactions/${item.id}`);
+                                        let res;
+                                        try {
+                                          res = await apiFetch.get(`/transactions/${item.id}`);
+                                        } catch (err) {
+                                          console.log("Plural fetch failed, trying singular...", err);
+                                          res = await apiFetch.get(`/transaction/${item.id}`);
+                                        }
+                                        const txData = res?.data || res;
+                                        if (txData) {
+                                          setPaymentTx(txData);
+                                        } else {
+                                          showNotif("Gagal mendapatkan detail transaksi.", "error");
+                                        }
                                       } catch (err) {
-                                        console.log("Plural fetch failed, trying singular...", err);
-                                        res = await apiFetch.get(`/transaction/${item.id}`);
+                                        console.error("Fetch detail failed:", err);
+                                        showNotif(err?.data?.message || "Gagal mendapatkan detail transaksi.", "error");
+                                      } finally {
+                                        setLoadingTxId(null);
                                       }
-                                      const txData = res?.data || res;
-                                      if (txData) {
-                                        setPaymentTx(txData);
-                                      } else {
-                                        showNotif("Gagal mendapatkan detail transaksi.", "error");
-                                      }
-                                    } catch (err) {
-                                      console.error("Fetch detail failed:", err);
-                                      showNotif(err?.data?.message || "Gagal mendapatkan detail transaksi.", "error");
-                                    } finally {
-                                      setLoadingTxId(null);
-                                    }
-                                  }}
-                                  disabled={loadingTxId === item.id}
-                                >
-                                  {loadingTxId === item.id ? (
-                                    <Loader2 size={14} className="animate-spin text-text-3" />
-                                  ) : (
-                                    <Eye size={14} className="text-text-3" />
-                                  )}
-                                  <span>Lihat Detail</span>
-                                </button>
+                                    }}
+                                    disabled={loadingTxId === item.id}
+                                  >
+                                    {loadingTxId === item.id ? (
+                                      <Loader2 size={14} className="animate-spin text-text-3" />
+                                    ) : (
+                                      <Eye size={14} className="text-text-3" />
+                                    )}
+                                    <span>Lihat Detail</span>
+                                  </button>
+                                  <div className="border-t border-bg-3" />
+                                </>
                               )}
+                              
+                              {/* Download Invoice Button - Available for all statuses */}
+                              <button
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-2 hover:bg-bg-3/60 hover:text-text-1 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMenu(null);
+                                  handleDownloadInvoice(item);
+                                }}
+                                disabled={downloadingId === item.id}
+                              >
+                                {downloadingId === item.id ? (
+                                  <Loader2 size={14} className="animate-spin text-primary-3" />
+                                ) : (
+                                  <Download size={14} className="text-primary-3" />
+                                )}
+                                <span>Download Invoice</span>
+                              </button>
                             </div>
                           )}
                         </div>
@@ -419,6 +568,9 @@ export default function SubscriptionHistory() {
           </div>
         )}
       </div>
+
+      {/* Payment Modal */}
+      {paymentTx && <PaymentModal transaction={paymentTx} onClose={() => setPaymentTx(null)} />}
     </div>
   );
 }
