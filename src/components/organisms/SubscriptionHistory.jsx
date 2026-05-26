@@ -63,6 +63,11 @@ export default function SubscriptionHistory() {
   const handleDownloadInvoice = async (transaction) => {
     setDownloadingId(transaction.id);
     try {
+      // Validate transaction data
+      if (!transaction || !transaction.id) {
+        throw new Error("Data transaksi tidak valid");
+      }
+
       // Fetch full transaction details if needed
       let fullTransaction = transaction;
       if (!transaction.customer_name || !transaction.customer_email) {
@@ -70,23 +75,34 @@ export default function SubscriptionHistory() {
           const res = await apiFetch.get(`/transactions/${transaction.id}`);
           fullTransaction = res?.data || transaction;
         } catch (err) {
-          console.log("Could not fetch full details, using existing data");
+          console.log("Could not fetch full details, using existing data", err);
         }
       }
       
       // Enrich with user data
       const enrichedTransaction = {
         ...fullTransaction,
+        invoice_code: fullTransaction.invoice_code || `INV-${fullTransaction.id}`,
+        plan_name: fullTransaction.plan_name || "Subscription Plan",
+        amount: fullTransaction.amount || 0,
+        status: fullTransaction.status || fullTransaction.transaction_status || "pending",
+        created_at: fullTransaction.created_at || new Date().toISOString(),
         customer_name: fullTransaction.customer_name || user?.name || user?.full_name || "Customer",
         customer_email: fullTransaction.customer_email || user?.email || "-",
         user: user,
       };
       
-      downloadInvoice(enrichedTransaction);
+      // Validate required fields
+      if (!enrichedTransaction.invoice_code || !enrichedTransaction.amount) {
+        throw new Error("Data invoice tidak lengkap");
+      }
+
+      await downloadInvoice(enrichedTransaction);
       showNotif("Invoice berhasil didownload!", "success");
     } catch (error) {
       console.error("Download invoice error:", error);
-      showNotif("Gagal mendownload invoice.", "error");
+      const errorMsg = error?.message || "Gagal mendownload invoice. Silakan coba lagi.";
+      showNotif(errorMsg, "error");
     } finally {
       setDownloadingId(null);
     }

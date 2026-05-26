@@ -8,16 +8,17 @@ import "jspdf-autotable";
  * @returns {jsPDF} PDF document
  */
 export function generateInvoicePDF(transaction, options = {}) {
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
+  try {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const contentWidth = pageWidth - 2 * margin;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - 2 * margin;
 
   // Colors
   const primaryColor = [139, 92, 246]; // Purple
@@ -247,6 +248,10 @@ export function generateInvoicePDF(transaction, options = {}) {
   doc.text("support@synthera.com | www.synthera.com", pageWidth / 2, footerY + 4, { align: "center" });
 
   return doc;
+  } catch (error) {
+    console.error("Error in generateInvoicePDF:", error);
+    throw new Error(`PDF generation failed: ${error.message}`);
+  }
 }
 
 /**
@@ -254,9 +259,27 @@ export function generateInvoicePDF(transaction, options = {}) {
  * @param {Object} transaction - Transaction data
  */
 export function downloadInvoice(transaction) {
-  const doc = generateInvoicePDF(transaction);
-  const fileName = `invoice-${transaction.invoice_code || "unknown"}.pdf`;
-  doc.save(fileName);
+  try {
+    // Validate transaction data
+    if (!transaction) {
+      throw new Error("Transaction data is required");
+    }
+
+    if (!transaction.invoice_code) {
+      throw new Error("Invoice code is required");
+    }
+
+    if (transaction.amount === undefined || transaction.amount === null) {
+      throw new Error("Transaction amount is required");
+    }
+
+    const doc = generateInvoicePDF(transaction);
+    const fileName = `invoice-${transaction.invoice_code || "unknown"}.pdf`;
+    doc.save(fileName);
+  } catch (error) {
+    console.error("Error generating invoice PDF:", error);
+    throw new Error(`Gagal membuat invoice: ${error.message}`);
+  }
 }
 
 /**
