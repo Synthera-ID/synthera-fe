@@ -523,8 +523,12 @@ export default function SubscriptionPage() {
         const res = await apiFetch.get("/subscriptions");
         const sorted = (res.data || []).sort((a, b) => (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99));
         setPlans(sorted);
+        setError(""); // Clear error on success
       } catch (err) {
+        console.error("Failed to fetch plans:", err);
         setError("Gagal memuat data paket. Silakan coba lagi.");
+        // Set empty plans to prevent crash
+        setPlans([]);
       } finally {
         setLoading(false);
       }

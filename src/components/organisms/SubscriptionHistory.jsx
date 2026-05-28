@@ -68,6 +68,15 @@ export default function SubscriptionHistory() {
         throw new Error("Data transaksi tidak valid");
       }
 
+      // Simpan nilai penting dari item list SEBELUM fetch API,
+      // karena API response mungkin tidak mengembalikan semua field atau return status lama
+      const originalCreatedAt = transaction.created_at;
+      const originalPlanName  =
+        transaction.plan_name ||
+        transaction.plan?.name ||
+        null;
+      const originalStatus    = transaction.status || transaction.transaction_status;
+
       // Fetch full transaction details if needed
       let fullTransaction = transaction;
       if (!transaction.customer_name || !transaction.customer_email) {
@@ -79,16 +88,42 @@ export default function SubscriptionHistory() {
         }
       }
       
-      // Enrich with user data
+      // Enrich with user data.
+      // created_at: selalu gunakan tanggal pembelian (dari item list), bukan hari ini.
+      // plan_name : cek plan_name langsung, lalu plan?.name (relasi nested), lalu fallback.
       const enrichedTransaction = {
         ...fullTransaction,
-        invoice_code: fullTransaction.invoice_code || `INV-${fullTransaction.id}`,
-        plan_name: fullTransaction.plan_name || "Subscription Plan",
+        invoice_code:
+          fullTransaction.invoice_code || `INV-${fullTransaction.id}`,
+        plan_name:
+          fullTransaction.plan_name  ||
+          fullTransaction.plan?.name ||
+          originalPlanName           ||
+          "Subscription Plan",
         amount: fullTransaction.amount || 0,
-        status: fullTransaction.status || fullTransaction.transaction_status || "pending",
-        created_at: fullTransaction.created_at || new Date().toISOString(),
-        customer_name: fullTransaction.customer_name || user?.name || user?.full_name || "Customer",
-        customer_email: fullTransaction.customer_email || user?.email || "-",
+        status:
+          originalStatus ||
+          fullTransaction.status ||
+          fullTransaction.transaction_status ||
+          "pending",
+        // Tanggal pembelian – prioritaskan nilai asli dari list item
+        created_at:
+          originalCreatedAt          ||
+          fullTransaction.created_at ||
+          new Date().toISOString(),
+        expired_at:
+          fullTransaction.expired_at ||
+          fullTransaction.due_date   ||
+          null,
+        customer_name:
+          fullTransaction.customer_name ||
+          user?.name ||
+          user?.full_name ||
+          "Customer",
+        customer_email:
+          fullTransaction.customer_email ||
+          user?.email ||
+          "-",
         user: user,
       };
       
@@ -97,6 +132,7 @@ export default function SubscriptionHistory() {
         throw new Error("Data invoice tidak lengkap");
       }
 
+      // downloadInvoice is async (loads logo then generates PDF)
       await downloadInvoice(enrichedTransaction);
       showNotif("Invoice berhasil didownload!", "success");
     } catch (error) {
@@ -163,16 +199,12 @@ export default function SubscriptionHistory() {
       setData(Array.isArray(transactions) ? transactions : []);
     } catch (err) {
       console.error("Failed to fetch history:", err);
-      // Handle different error cases
-      if (err?.status === 404) {
-        // No transactions found - not an error
-        setData([]);
-      } else if (err?.status === 401) {
-        // Unauthorized - will be handled by apiFetch (redirect to login)
-        setData([]);
-      } else {
-        // Other errors - show error message but don't crash
-        setData([]);
+      // Handle different error cases gracefully
+      // Don't throw error, just set empty data
+      setData([]);
+      
+      // Only show error message for non-auth errors
+      if (err?.status !== 401 && err?.status !== 404) {
         setError("Gagal memuat riwayat transaksi. Silakan refresh halaman.");
       }
     } finally {
@@ -181,7 +213,14 @@ export default function SubscriptionHistory() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    // Wrap in try-catch to prevent any uncaught errors
+    try {
+      fetchData();
+    } catch (err) {
+      console.error("Error in fetchData effect:", err);
+      setLoading(false);
+      setData([]);
+    }
   }, [fetchData]);
 
   // Sorting logic
@@ -586,7 +625,13 @@ export default function SubscriptionHistory() {
       </div>
 
       {/* Payment Modal */}
-      {paymentTx && <PaymentModal transaction={paymentTx} onClose={() => setPaymentTx(null)} />}
+      {paymentTx && (
+        <PaymentModal 
+          transactionData={paymentTx} 
+          plan={{ name: paymentTx.plan_name || "Subscription Plan" }}
+          onClose={() => setPaymentTx(null)} 
+        />
+      )}
     </div>
   );
 }

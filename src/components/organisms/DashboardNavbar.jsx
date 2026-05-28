@@ -37,7 +37,6 @@ function useBreadcrumbs(pathname) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function DashboardNavbar({ onToggleSidebar, UserData, logout }) {
-  console.log(UserData);
   const pathname = usePathname();
   const breadcrumbs = useBreadcrumbs(pathname);
 

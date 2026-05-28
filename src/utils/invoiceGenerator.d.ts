@@ -48,7 +48,7 @@ export function generateInvoicePDF(
  * Download single invoice
  * @param transaction - Transaction data
  */
-export function downloadInvoice(transaction: Transaction): void;
+export function downloadInvoice(transaction: Transaction): Promise<void>;
 
 /**
  * Download all invoices as ZIP

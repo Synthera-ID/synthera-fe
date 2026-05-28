@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -46,14 +47,20 @@ export default function Pricing() {
     async function fetchPlans() {
       try {
         const res = await fetch(`${API_BASE_URL}/subscriptions`);
-        if (!res.ok) throw new Error("Failed to fetch plans");
+        if (!res.ok) {
+          console.error("Failed to fetch plans, status:", res.status);
+          throw new Error("Failed to fetch plans");
+        }
         const json = await res.json();
         // The public API uses SubscriptionResource::collection which wraps in { data: [...] }
         const data = json.data || json;
         setPlans(data);
+        setError(null); // Clear error on success
       } catch (err) {
         console.error("Failed to fetch subscription plans:", err);
         setError("Gagal memuat paket langganan.");
+        // Set empty plans to prevent crash
+        setPlans([]);
       } finally {
         setLoading(false);
       }
