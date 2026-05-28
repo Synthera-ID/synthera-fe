@@ -5,6 +5,7 @@ import {
   Receipt, Search, Download, MoreHorizontal,
   Check, AlertCircle, Loader2, X, Eye, Edit3,
   Trash2, TrendingUp, Clock, XCircle, CreditCard,
+  FileText, CheckSquare, Square,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
@@ -36,6 +37,11 @@ function formatDate(str) {
   return new Date(str).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function formatDateCSV(str) {
+  if (!str) return "-";
+  return new Date(str).toISOString().slice(0, 10);
+}
+
 function formatCurrency(amount) {
   if (amount == null) return "-";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
@@ -55,6 +61,197 @@ function getInitials(name) {
 
 function getAvatarColor(id) { return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length]; }
 
+// ─── Export CSV Modal ─────────────────────────────────────────────────────────
+function ExportCSVModal({ transactions, onClose, onExported }) {
+  const [selectedStatuses, setSelectedStatuses] = useState(new Set(STATUS_OPTIONS));
+  const [isExporting, setIsExporting] = useState(false);
+
+  const allSelected = selectedStatuses.size === STATUS_OPTIONS.length;
+
+  function toggleStatus(s) {
+    setSelectedStatuses((prev) => {
+      const next = new Set(prev);
+      next.has(s) ? next.delete(s) : next.add(s);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedStatuses(new Set());
+    } else {
+      setSelectedStatuses(new Set(STATUS_OPTIONS));
+    }
+  }
+
+  function doExport() {
+    if (selectedStatuses.size === 0) return;
+    setIsExporting(true);
+
+    const filtered = transactions.filter((t) =>
+      selectedStatuses.has(t.transaction_status?.toLowerCase())
+    );
+
+    const header = ["Invoice", "Email", "Plan", "Amount", "Status", "Date", "PaymentMethod"];
+    const rows = filtered.map((t) => [
+      t.invoice_code ?? "-",
+      t.user?.email ?? "-",
+      t.plan?.name ?? "-",
+      t.final_amount ?? t.amount ?? 0,
+      t.transaction_status ?? "-",
+      formatDateCSV(t.created_at),
+      t.payment?.payment_method ?? "-",
+    ]);
+
+    // Escape fields that may contain commas
+    const escape = (v) => {
+      const str = String(v);
+      return str.includes(",") || str.includes('"') || str.includes("\n")
+        ? `"${str.replace(/"/g, '""')}"`
+        : str;
+    };
+
+    const csvContent =
+      [header, ...rows].map((r) => r.map(escape).join(",")).join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transactions_${[...selectedStatuses].join("-")}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      setIsExporting(false);
+      onExported(`Exported ${filtered.length} transaction(s) as CSV.`);
+      onClose();
+    }, 400);
+  }
+
+  const previewCount = transactions.filter((t) =>
+    selectedStatuses.has(t.transaction_status?.toLowerCase())
+  ).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div
+        className="bg-bg-2 border border-bg-3 rounded-3xl p-8 w-full max-w-md shadow-2xl"
+        style={{ animation: "modalIn 0.22s cubic-bezier(.4,0,.2,1)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-1/10 flex items-center justify-center">
+              <FileText size={18} className="text-primary-3" />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-bold">Export CSV</h2>
+              <p className="text-[12px] text-text-3">Select status to include in export</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-3 hover:text-text-1 hover:bg-bg-3 transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* CSV Format info */}
+        <div className="mb-5 px-4 py-3 rounded-xl bg-bg-3/40 border border-bg-3">
+          <p className="text-[11px] text-text-3 font-semibold uppercase tracking-widest mb-1">CSV Format</p>
+          <p className="text-[12px] text-text-2 font-mono break-all">
+            Invoice, Email, Plan, Amount, Status, Date, PaymentMethod
+          </p>
+        </div>
+
+        {/* Select All */}
+        <div className="mb-3">
+          <button
+            onClick={toggleAll}
+            className="flex items-center gap-2.5 text-[13px] font-semibold text-text-2 hover:text-text-1 transition-colors"
+          >
+            {allSelected
+              ? <CheckSquare size={16} className="text-primary-3" />
+              : <Square size={16} className="text-text-3" />}
+            Select All Statuses
+          </button>
+        </div>
+
+        {/* Status checkboxes */}
+        <div className="space-y-2 mb-6">
+          {STATUS_OPTIONS.map((s) => {
+            const st = STATUS_STYLES[s];
+            const checked = selectedStatuses.has(s);
+            const count = transactions.filter(
+              (t) => t.transaction_status?.toLowerCase() === s
+            ).length;
+            return (
+              <button
+                key={s}
+                onClick={() => toggleStatus(s)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 ${
+                  checked
+                    ? `${st.bg} ${st.border} border`
+                    : "bg-bg-3/20 border-bg-3 hover:border-bg-3/80"
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-all ${
+                  checked ? `bg-primary-1 border-primary-1` : "border-text-3 bg-transparent"
+                }`}>
+                  {checked && <Check size={10} className="text-white" strokeWidth={3} />}
+                </div>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
+                <span className={`text-[13px] font-semibold flex-1 text-left ${checked ? st.text : "text-text-2"}`}>
+                  {st.label}
+                </span>
+                <span className="text-[11px] text-text-3 tabular-nums">
+                  {count} row{count !== 1 ? "s" : ""}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Preview count */}
+        <div className="mb-5 flex items-center justify-between px-4 py-2.5 rounded-xl bg-primary-1/10 border border-primary-1/20">
+          <span className="text-[12px] text-text-3">Rows to export</span>
+          <span className="text-[14px] font-bold text-primary-3">{previewCount} transaction{previewCount !== 1 ? "s" : ""}</span>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-bg-3 text-text-3 hover:text-text-1 hover:border-primary-1/30 text-[13px] font-semibold transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={doExport}
+            disabled={selectedStatuses.size === 0 || isExporting || previewCount === 0}
+            className="flex-1 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-semibold transition-all shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2"
+          >
+            {isExporting ? (
+              <><Loader2 size={14} className="animate-spin" /> Exporting…</>
+            ) : (
+              <><Download size={14} /> Export CSV</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96) translateY(8px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TransactionManagementPage() {
   const [transactions, setTransactions] = useState([]);
@@ -67,6 +264,7 @@ export default function TransactionManagementPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [notification, setNotif] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -128,33 +326,6 @@ export default function TransactionManagementPage() {
     }
   }
 
-  // Export CSV
-  function handleExport() {
-    const rows = [
-      ["Invoice", "User", "Email", "Plan", "Amount", "Final Amount", "Status", "Payment Method", "Date", "CreatedBy", "LastUpdateBy"],
-      ...transactions.map((t) => [
-        t.invoice_code,
-        t.user?.name || "-",
-        t.user?.email || "-",
-        t.plan?.name || "-",
-        t.amount,
-        t.final_amount,
-        t.transaction_status,
-        t.payment?.payment_method || "-",
-        formatDate(t.created_at),
-        t.CreatedBy || "-",
-        t.LastUpdateBy || "-",
-      ]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "transactions.csv"; a.click();
-    URL.revokeObjectURL(url);
-    showNotif("Export berhasil.");
-  }
-
   return (
     <>
       {/* Header */}
@@ -164,7 +335,7 @@ export default function TransactionManagementPage() {
           <p className="text-text-3 text-[13px]">Monitor and manage all user transactions on your platform.</p>
         </div>
         <button
-          onClick={handleExport}
+          onClick={() => setShowExportModal(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]"
         >
           <Download size={15} /> Export CSV
@@ -337,6 +508,15 @@ export default function TransactionManagementPage() {
 
       {/* Edit Status Modal */}
       {editTx && <UpdateStatusModal tx={editTx} onClose={() => setEditTx(null)} onSave={handleUpdateStatus} />}
+
+      {/* Export CSV Modal */}
+      {showExportModal && (
+        <ExportCSVModal
+          transactions={transactions}
+          onClose={() => setShowExportModal(false)}
+          onExported={(msg) => showNotif(msg)}
+        />
+      )}
 
       {/* Delete Confirmation */}
       <ConfirmationModal
