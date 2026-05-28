@@ -14,7 +14,7 @@
  *  9. Notes & Terms   (left | right)
  */
 
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 
 // ─── Color Palette ────────────────────────────────────────────────────────────
