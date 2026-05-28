@@ -491,27 +491,71 @@ export async function downloadInvoice(transaction) {
 
   const logoBase64 = await loadLogoBase64();
   const doc = generateInvoicePDF(transaction, { logoBase64 });
-  doc.save(`invoice-${transaction.invoice_code}.pdf`);
+
+  // Use blob + <a> click for reliable PDF download in Chrome
+  // (avoids any MIME-type / extension ambiguity that triggers ZIP behaviour)
+  const blob = doc.output("blob");
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href     = url;
+  link.download = `invoice-${transaction.invoice_code}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
- * Download all invoices as ZIP
+ * Get invoice as a Blob (PDF) – useful for custom download logic.
  */
-export async function downloadAllInvoicesAsZip(transactions) {
-  const JSZip = (await import("jszip")).default;
-  const { saveAs } = await import("file-saver");
-
+export async function getInvoiceBlob(transaction) {
+  if (!transaction) throw new Error("Transaction data is required");
   const logoBase64 = await loadLogoBase64();
-  const zip = new JSZip();
-  const folder = zip.folder("invoices");
+  const doc = generateInvoicePDF(transaction, { logoBase64 });
+  return doc.output("blob");
+}
 
-  for (const tx of transactions) {
-    const doc = generateInvoicePDF(tx, { logoBase64 });
-    const blob = doc.output("blob");
-    folder.file(`invoice-${tx.invoice_code || tx.id}.pdf`, blob);
+/**
+ * Download all invoices as individual PDF files (no ZIP).
+ * Each file is downloaded directly as PDF with a small delay between
+ * downloads to avoid browser popup blocking.
+ *
+ * @param {Object[]} transactions
+ * @param {(current: number, total: number) => void} [onProgress]
+ */
+export async function downloadAllInvoicesAsPDF(transactions, onProgress) {
+  if (!transactions || transactions.length === 0) {
+    throw new Error("Tidak ada invoice untuk didownload.");
   }
 
-  const content = await zip.generateAsync({ type: "blob" });
-  const date = new Date().toISOString().split("T")[0];
-  saveAs(content, `all-invoices-${date}.zip`);
+  const logoBase64 = await loadLogoBase64();
+
+  for (let i = 0; i < transactions.length; i++) {
+    const tx = transactions[i];
+
+    if (!tx) continue;
+
+    const doc = generateInvoicePDF(tx, { logoBase64 });
+    const filename = `invoice-${tx.invoice_code || tx.id || i + 1}.pdf`;
+
+    // Use blob + <a> download approach for consistent behaviour in Chrome
+    const blob = doc.output("blob");
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href     = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Revoke after a short delay so the browser can start the download
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    if (onProgress) onProgress(i + 1, transactions.length);
+
+    // Small gap between files to avoid browser popup blocking
+    if (i < transactions.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+  }
 }

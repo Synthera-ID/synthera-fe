@@ -51,15 +51,19 @@ export function generateInvoicePDF(
 export function downloadInvoice(transaction: Transaction): Promise<void>;
 
 /**
- * Download all invoices as ZIP
- * @param transactions - Array of transaction data
+ * Get invoice as a Blob (PDF)
+ * @param transaction - Transaction data
  */
-export function downloadAllInvoicesAsZip(
-  transactions: Transaction[]
-): Promise<void>;
+export function getInvoiceBlob(transaction: Transaction): Promise<Blob>;
 
 /**
- * Download all invoices as single multi-page PDF
+ * Download all invoices as individual PDF files (no ZIP).
+ * Each file is saved as invoice-{invoice_code}.pdf directly to the browser.
+ *
  * @param transactions - Array of transaction data
+ * @param onProgress   - Optional progress callback (current, total)
  */
-export function downloadAllInvoicesAsPDF(transactions: Transaction[]): void;
+export function downloadAllInvoicesAsPDF(
+  transactions: Transaction[],
+  onProgress?: (current: number, total: number) => void
+): Promise<void>;

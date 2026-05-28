@@ -21,7 +21,7 @@ import {
 import apiFetch from "@/utils/apiFetch";
 import { formatRupiah, formatDate } from "@/utils/format";
 import PaymentModal from "@/components/organisms/PaymentModal";
-import { downloadInvoice, downloadAllInvoicesAsZip } from "@/utils/invoiceGenerator";
+import { downloadInvoice, downloadAllInvoicesAsPDF } from "@/utils/invoiceGenerator";
 import { useAuth } from "@/hooks/useAuth";
 
 const STATUS_STYLES = {
@@ -53,6 +53,7 @@ export default function SubscriptionHistory() {
   const [notification, setNotif] = useState(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
 
   const showNotif = (msg, type = "success") => {
     setNotif({ msg, type });
@@ -68,29 +69,38 @@ export default function SubscriptionHistory() {
         throw new Error("Data transaksi tidak valid");
       }
 
-      // Simpan nilai penting dari item list SEBELUM fetch API,
-      // karena API response mungkin tidak mengembalikan semua field atau return status lama
+      // Cek apakah invoice_code ada
+      if (!transaction.invoice_code) {
+        showNotif("Invoice tidak ditemukan untuk transaksi ini.", "error");
+        return;
+      }
+
+      // Simpan nilai penting dari item list SEBELUM fetch API
       const originalCreatedAt = transaction.created_at;
       const originalPlanName  =
         transaction.plan_name ||
         transaction.plan?.name ||
         null;
-      const originalStatus    = transaction.status || transaction.transaction_status;
+      const originalStatus = transaction.status || transaction.transaction_status;
 
       // Fetch full transaction details if needed
       let fullTransaction = transaction;
       if (!transaction.customer_name || !transaction.customer_email) {
         try {
           const res = await apiFetch.get(`/transactions/${transaction.id}`);
-          fullTransaction = res?.data || transaction;
+          // Jika response 404 atau data kosong, invoice tidak ditemukan
+          if (!res) throw new Error("Invoice tidak ditemukan di server.");
+          fullTransaction = res?.data || res;
         } catch (err) {
+          // Jika 404, tampilkan error jelas
+          if (err?.status === 404) {
+            throw new Error(`Invoice ${transaction.invoice_code} tidak ditemukan.`);
+          }
+          // Error lain: lanjutkan dengan data yang ada
           console.log("Could not fetch full details, using existing data", err);
         }
       }
-      
-      // Enrich with user data.
-      // created_at: selalu gunakan tanggal pembelian (dari item list), bukan hari ini.
-      // plan_name : cek plan_name langsung, lalu plan?.name (relasi nested), lalu fallback.
+
       const enrichedTransaction = {
         ...fullTransaction,
         invoice_code:
@@ -106,7 +116,6 @@ export default function SubscriptionHistory() {
           fullTransaction.status ||
           fullTransaction.transaction_status ||
           "pending",
-        // Tanggal pembelian – prioritaskan nilai asli dari list item
         created_at:
           originalCreatedAt          ||
           fullTransaction.created_at ||
@@ -126,60 +135,76 @@ export default function SubscriptionHistory() {
           "-",
         user: user,
       };
-      
+
       // Validate required fields
-      if (!enrichedTransaction.invoice_code || !enrichedTransaction.amount) {
-        throw new Error("Data invoice tidak lengkap");
+      if (!enrichedTransaction.invoice_code) {
+        throw new Error("Invoice tidak ditemukan.");
+      }
+      if (!enrichedTransaction.amount && enrichedTransaction.amount !== 0) {
+        throw new Error("Data invoice tidak lengkap (jumlah tidak tersedia).");
       }
 
-      // downloadInvoice is async (loads logo then generates PDF)
+      // Generate & download PDF langsung (tanpa ZIP)
       await downloadInvoice(enrichedTransaction);
-      showNotif("Invoice berhasil didownload!", "success");
+      showNotif(`Invoice ${enrichedTransaction.invoice_code} berhasil didownload!`, "success");
     } catch (error) {
       console.error("Download invoice error:", error);
-      const errorMsg = error?.message || "Gagal mendownload invoice. Silakan coba lagi.";
+      const errorMsg =
+        error?.message ||
+        "Gagal mendownload invoice. Silakan coba lagi.";
       showNotif(errorMsg, "error");
     } finally {
       setDownloadingId(null);
     }
   };
 
-  // Download all invoices handler
+  // Download all invoices as individual PDFs (no ZIP)
   const handleDownloadAllInvoices = async () => {
     if (filteredData.length === 0) {
       showNotif("Tidak ada invoice untuk didownload.", "error");
       return;
     }
 
+    // Filter only paid / successful transactions
+    const successfulTransactions = filteredData.filter((tx) => {
+      const status = (tx.status || tx.transaction_status || "").toLowerCase();
+      return status === "success" || status === "paid" || status === "completed";
+    });
+
+    if (successfulTransactions.length === 0) {
+      showNotif("Tidak ada transaksi yang berhasil untuk didownload.", "error");
+      return;
+    }
+
     setDownloadingAll(true);
+    setDownloadProgress({ current: 0, total: successfulTransactions.length });
+
     try {
-      // Filter only successful transactions
-      const successfulTransactions = filteredData.filter((tx) => {
-        const status = (tx.status || tx.transaction_status || "").toLowerCase();
-        return status === "success" || status === "paid" || status === "completed";
-      });
-
-      if (successfulTransactions.length === 0) {
-        showNotif("Tidak ada transaksi yang berhasil untuk didownload.", "error");
-        setDownloadingAll(false);
-        return;
-      }
-
       // Enrich all transactions with user data
       const enrichedTransactions = successfulTransactions.map((tx) => ({
         ...tx,
+        invoice_code: tx.invoice_code || `INV-${tx.id}`,
         customer_name: tx.customer_name || user?.name || user?.full_name || "Customer",
         customer_email: tx.customer_email || user?.email || "-",
         user: user,
       }));
 
-      await downloadAllInvoicesAsZip(enrichedTransactions);
-      showNotif(`${successfulTransactions.length} invoice berhasil didownload!`, "success");
+      // Download setiap invoice sebagai PDF langsung (bukan ZIP)
+      await downloadAllInvoicesAsPDF(enrichedTransactions, (current, total) => {
+        setDownloadProgress({ current, total });
+      });
+
+      showNotif(
+        `${successfulTransactions.length} invoice berhasil didownload sebagai PDF!`,
+        "success"
+      );
     } catch (error) {
       console.error("Download all invoices error:", error);
-      showNotif("Gagal mendownload semua invoice.", "error");
+      const errorMsg = error?.message || "Gagal mendownload invoice. Silakan coba lagi.";
+      showNotif(errorMsg, "error");
     } finally {
       setDownloadingAll(false);
+      setDownloadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -311,7 +336,11 @@ export default function SubscriptionHistory() {
             {downloadingAll ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                <span>Downloading...</span>
+                <span>
+                  {downloadProgress.total > 0
+                    ? `PDF ${downloadProgress.current}/${downloadProgress.total}...`
+                    : "Downloading..."}
+                </span>
               </>
             ) : (
               <>
