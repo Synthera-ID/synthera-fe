@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Receipt, Search, Download, MoreHorizontal,
   Check, AlertCircle, Loader2, X, Eye, Edit3,
-  Trash2, TrendingUp, Clock, XCircle, CreditCard,
+  Trash2, TrendingUp, CreditCard,
   FileText, CheckSquare, Square,
 } from "lucide-react";
 import apiFetch from "@/utils/apiFetch";
@@ -288,11 +288,43 @@ export default function TransactionManagementPage() {
     return () => clearTimeout(t);
   }, [fetchTransactions]);
 
-  // Stats
-  const totalRevenue = transactions.filter((t) => t.transaction_status === "paid" || t.transaction_status === "completed").reduce((s, t) => s + Number(t.final_amount || 0), 0);
-  const totalPaid = transactions.filter((t) => t.transaction_status === "paid" || t.transaction_status === "completed").length;
-  const totalPending = transactions.filter((t) => t.transaction_status === "pending").length;
-  const totalFailed = transactions.filter((t) => t.transaction_status === "failed").length;
+  // Stats - Redesigned metrics
+  const totalTransactions = transactions.length;
+  const totalRevenue = transactions
+    .filter((t) => t.transaction_status === "paid" || t.transaction_status === "completed")
+    .reduce((s, t) => s + Number(t.final_amount || 0), 0);
+  
+  // Net Income: Total dari 3 digit terakhir (kode unik) setiap transaksi paid/completed
+  // Contoh: Rp 49.610 → Net Income = Rp 610 (uang capek)
+  // Hanya transaksi yang sudah PAID/COMPLETED yang dihitung
+  const netIncome = transactions
+    .filter((t) => t.transaction_status === "paid" || t.transaction_status === "completed")
+    .reduce((sum, t) => {
+      const amount = Number(t.final_amount || 0);
+      // Ambil 3 digit terakhir sebagai kode unik (net income)
+      const uniqueCode = amount % 1000;
+      return sum + uniqueCode;
+    }, 0);
+  
+  // Total Volume: Active/Total users
+  // Active = users dengan transaksi paid/completed yang masih dalam periode aktif (misal 30 hari terakhir)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const uniqueUserIds = new Set(transactions.map((t) => t.user_id).filter(Boolean));
+  const totalUsers = uniqueUserIds.size;
+  
+  const activeUserIds = new Set(
+    transactions
+      .filter((t) => {
+        const isPaid = t.transaction_status === "paid" || t.transaction_status === "completed";
+        const isRecent = new Date(t.created_at) >= thirtyDaysAgo;
+        return isPaid && isRecent;
+      })
+      .map((t) => t.user_id)
+      .filter(Boolean)
+  );
+  const activeUsers = activeUserIds.size;
 
   function showNotif(msg, type = "success") {
     setNotif({ msg, type });
@@ -342,12 +374,36 @@ export default function TransactionManagementPage() {
         </button>
       </header>
 
-      {/* Stat Cards */}
+      {/* Stat Cards - Redesigned */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard icon={<TrendingUp size={20} className="text-violet-400" />} iconBg="bg-violet-500/20" label="Total Revenue" value={formatCurrency(totalRevenue)} />
-        <StatCard icon={<CreditCard size={20} className="text-emerald-400" />} iconBg="bg-emerald-500/20" label="Paid" value={totalPaid} />
-        <StatCard icon={<Clock size={20} className="text-amber-400" />} iconBg="bg-amber-500/20" label="Pending" value={totalPending} />
-        <StatCard icon={<XCircle size={20} className="text-rose-400" />} iconBg="bg-rose-500/20" label="Failed" value={totalFailed} />
+        <StatCard 
+          icon={<Receipt size={20} className="text-blue-400" />} 
+          iconBg="bg-blue-500/20" 
+          label="Total Transaction" 
+          value={totalTransactions.toLocaleString('id-ID')}
+          subtitle="All transactions"
+        />
+        <StatCard 
+          icon={<TrendingUp size={20} className="text-violet-400" />} 
+          iconBg="bg-violet-500/20" 
+          label="Total Revenue" 
+          value={formatCurrency(totalRevenue)}
+          subtitle="Gross income"
+        />
+        <StatCard 
+          icon={<CreditCard size={20} className="text-emerald-400" />} 
+          iconBg="bg-emerald-500/20" 
+          label="Net Income" 
+          value={formatCurrency(netIncome)}
+          subtitle="Unique code from paid transactions"
+        />
+        <StatCard 
+          icon={<Check size={20} className="text-amber-400" />} 
+          iconBg="bg-amber-500/20" 
+          label="Total Volume" 
+          value={`${activeUsers}/${totalUsers}`}
+          subtitle="Active/Total users"
+        />
       </div>
 
       {/* Filters */}
@@ -547,13 +603,14 @@ export default function TransactionManagementPage() {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon, iconBg, label, value }) {
+function StatCard({ icon, iconBg, label, value, subtitle }) {
   return (
-    <div className="bg-bg-2 border border-bg-3 rounded-2xl p-5 flex items-center gap-4">
+    <div className="bg-bg-2 border border-bg-3 rounded-2xl p-5 flex items-center gap-4 hover:border-primary-1/30 transition-all duration-200">
       <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>{icon}</div>
-      <div>
+      <div className="min-w-0 flex-1">
         <div className="text-[12px] text-text-3 mb-0.5">{label}</div>
-        <div className="text-[22px] font-bold tracking-tight leading-none">{value}</div>
+        <div className="text-[22px] font-bold tracking-tight leading-none truncate">{value}</div>
+        {subtitle && <div className="text-[10px] text-text-3 mt-1 truncate">{subtitle}</div>}
       </div>
     </div>
   );
