@@ -559,3 +559,315 @@ export async function downloadAllInvoicesAsPDF(transactions, onProgress) {
     }
   }
 }
+
+/**
+ * Download all transactions as a single PDF file with table format.
+ * Generates one PDF containing all transaction data in a table.
+ *
+ * @param {Object[]} transactions - Array of transaction objects
+ */
+export async function downloadAllTransactionsAsSinglePDF(transactions) {
+  if (!transactions || transactions.length === 0) {
+    throw new Error("Tidak ada transaksi untuk didownload.");
+  }
+
+  // Debug: Log data transaksi untuk melihat field yang tersedia
+  console.log("📊 Transactions data for PDF:", transactions);
+  console.log("📦 First transaction plan_name:", transactions[0]?.plan_name);
+  console.log("📦 First transaction membership_name:", transactions[0]?.membership_name);
+
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+  if (typeof doc.autoTable !== "function") {
+    throw new Error("jspdf-autotable plugin not loaded");
+  }
+
+  const PW = doc.internal.pageSize.getWidth();   // 297 (landscape)
+  const PH = doc.internal.pageSize.getHeight();  // 210 (landscape)
+  const ML = 15;   // margin left
+  const MR = 15;   // margin right
+  const CW = PW - ML - MR; // content width
+  const RIGHT = PW - MR;
+
+  // Load logo
+  const logoBase64 = await loadLogoBase64();
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 1. TOP ACCENT BAR (Purple | Orange split)
+  // ════════════════════════════════════════════════════════════════════════════
+  const accentH = 8;
+  const orangeW = 100;
+  
+  doc.setFillColor(...C.purple);
+  doc.rect(0, 0, PW - orangeW, accentH, 'F');
+  
+  doc.setFillColor(...C.orange);
+  doc.rect(PW - orangeW, 0, orangeW, accentH, 'F');
+
+  let y = accentH + 15;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 2. HEADER SECTION
+  // ════════════════════════════════════════════════════════════════════════════
+  
+  // Logo (Left)
+  if (logoBase64) {
+    const logoSize = 16;
+    doc.addImage(logoBase64, "PNG", ML, y, logoSize, logoSize);
+  }
+
+  // Title (Center)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(...C.purple);
+  doc.text("RIWAYAT PEMBELIAN", PW / 2, y + 8, { align: "center" });
+
+  // Export Info (Right)
+  const exportDate = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.grayMid);
+  doc.text(`Tanggal Export: ${exportDate}`, RIGHT, y + 4, { align: "right" });
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.purpleMid);
+  doc.text(`Total Transaksi: ${transactions.length}`, RIGHT, y + 10, { align: "right" });
+
+  y += 25;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 3. DIVIDER LINE
+  // ════════════════════════════════════════════════════════════════════════════
+  doc.setDrawColor(...C.divider);
+  doc.setLineWidth(0.5);
+  doc.line(ML, y, RIGHT, y);
+  y += 8;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 4. TRANSACTIONS TABLE
+  // ════════════════════════════════════════════════════════════════════════════
+  
+  const tableHead = [["NO", "INVOICE", "PAKET", "HARGA", "STATUS", "TANGGAL", "PEMBUAT"]];
+  
+  const tableBody = transactions.map((tx, index) => {
+    const status = getStatus(tx);
+    const statusLabel = STATUS_LABELS[status] || "PENDING";
+    // Ganti "System" menjadi "Synthera.id"
+    const createdBy = tx.created_by_name || tx.created_by || "System";
+    const displayCreatedBy = createdBy === "System" ? "Synthera.id" : createdBy;
+    
+    // Ambil nama paket yang sebenarnya dari data dengan berbagai fallback
+    const planName = 
+      tx.plan_name || 
+      tx.membership_name || 
+      tx.membership?.name || 
+      tx.plan?.name ||
+      tx.subscription_plan ||
+      tx.package_name ||
+      "Basic Plan";
+    
+    return [
+      (index + 1).toString(),
+      tx.invoice_code || "-",
+      planName,
+      formatRupiah(tx.amount || 0),
+      statusLabel,
+      formatDate(tx.created_at),
+      displayCreatedBy,
+    ];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: tableHead,
+    body: tableBody,
+    theme: "plain",
+
+    headStyles: {
+      fillColor: C.purple,
+      textColor: C.white,
+      fontSize: 9,
+      fontStyle: "bold",
+      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+      halign: "center",
+      valign: "middle",
+      minCellHeight: 10,
+      lineWidth: { bottom: 0.5 },
+      lineColor: [224, 224, 224], // #e0e0e0
+      overflow: 'linebreak',
+    },
+
+    bodyStyles: {
+      textColor: C.grayDark,
+      fontSize: 8,
+      cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+      lineWidth: { bottom: 0.3 },
+      lineColor: [224, 224, 224], // #e0e0e0 - garis horizontal antar baris
+      valign: "middle",
+      overflow: 'linebreak',
+    },
+
+    alternateRowStyles: {
+      fillColor: C.purpleLight,
+    },
+
+    columnStyles: {
+      0: { cellWidth: 20, halign: "center", minCellWidth: 20, overflow: 'visible' },   // NO
+      1: { cellWidth: 50, halign: "left", overflow: 'linebreak' },     // INVOICE - diperlebar agar tidak terpecah
+      2: { cellWidth: 50, halign: "left", overflow: 'linebreak' },     // PAKET - diperlebar untuk nama paket lengkap
+      3: { cellWidth: 38, halign: "center", overflow: 'linebreak' },   // HARGA - diperlebar dan center agar sejajar
+      4: { cellWidth: 28, halign: "center", overflow: 'linebreak' },   // STATUS
+      5: { cellWidth: 35, halign: "center", overflow: 'linebreak' },   // TANGGAL
+      6: { cellWidth: 'auto', halign: "left", overflow: 'linebreak' }, // PEMBUAT - auto mengisi sisa ruang
+    },
+
+    margin: { left: ML, right: MR },
+    
+    // Nonaktifkan garis vertikal
+    tableLineWidth: 0,
+    tableLineColor: [224, 224, 224],
+    
+    didParseCell(data) {
+      // Pastikan header "NO" tidak terpecah - force horizontal
+      if (data.section === "head" && data.column.index === 0) {
+        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 8, right: 8 };
+        data.cell.styles.minCellWidth = 20;
+        data.cell.styles.overflow = 'visible';
+      }
+      
+      // Pastikan header INVOICE rata kiri (sejajar dengan body)
+      if (data.section === "head" && data.column.index === 1) {
+        data.cell.styles.halign = "left";
+        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 4, right: 4 };
+      }
+      
+      // Pastikan header PAKET rata kiri (sejajar dengan body)
+      if (data.section === "head" && data.column.index === 2) {
+        data.cell.styles.halign = "left";
+        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 4, right: 4 };
+      }
+      
+      // Pastikan header HARGA center (bukan JUMLAH)
+      if (data.section === "head" && data.column.index === 3) {
+        data.cell.styles.halign = "center";
+      }
+      
+      // Pastikan header PEMBUAT rata kiri
+      if (data.section === "head" && data.column.index === 6) {
+        data.cell.styles.halign = "left";
+        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 4, right: 4 };
+      }
+      
+      // Kolom INVOICE - pastikan tidak terpecah
+      if (data.section === "body" && data.column.index === 1) {
+        data.cell.styles.overflow = 'linebreak';
+        data.cell.styles.halign = "left";
+      }
+      
+      // Kolom PAKET - pastikan sejajar dan tidak terpecah
+      if (data.section === "body" && data.column.index === 2) {
+        data.cell.styles.overflow = 'linebreak';
+        data.cell.styles.halign = "left";
+        data.cell.styles.valign = "middle";
+        data.cell.styles.cellPadding = { top: 5, bottom: 5, left: 4, right: 4 };
+      }
+      
+      // Style untuk kolom HARGA (purple & bold & center)
+      if (data.section === "body" && data.column.index === 3) {
+        data.cell.styles.textColor = C.purple;
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.halign = "center"; // Center agar sejajar seperti STATUS, TANGGAL
+        data.cell.styles.valign = "middle";
+        data.cell.styles.overflow = 'linebreak';
+      }
+      
+      // Style untuk kolom STATUS dengan warna sesuai status
+      if (data.section === "body" && data.column.index === 4) {
+        const statusText = data.cell.text[0];
+        let statusColor = C.grayMid;
+        
+        if (statusText === "PAID" || statusText === "COMPLETED") {
+          statusColor = STATUS_COLORS.paid;
+        } else if (statusText === "PENDING") {
+          statusColor = STATUS_COLORS.pending;
+        } else if (statusText === "FAILED" || statusText === "CANCELLED") {
+          statusColor = STATUS_COLORS.failed;
+        } else if (statusText === "EXPIRED") {
+          statusColor = STATUS_COLORS.expired;
+        }
+        
+        data.cell.styles.textColor = statusColor;
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.halign = "center";
+        data.cell.styles.valign = "middle";
+      }
+      
+      // Kolom TANGGAL - pastikan center dan sejajar
+      if (data.section === "body" && data.column.index === 5) {
+        data.cell.styles.halign = "center";
+        data.cell.styles.valign = "middle";
+      }
+      
+      // Pastikan kolom PEMBUAT body sejajar dengan header (rata kiri)
+      if (data.section === "body" && data.column.index === 6) {
+        data.cell.styles.halign = "left";
+        data.cell.styles.valign = "middle";
+        data.cell.styles.cellPadding = { top: 5, bottom: 5, left: 4, right: 4 };
+        data.cell.styles.overflow = 'linebreak';
+      }
+    },
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 5. FOOTER
+  // ════════════════════════════════════════════════════════════════════════════
+  
+  // Footer divider
+  doc.setDrawColor(...C.divider);
+  doc.setLineWidth(0.5);
+  doc.line(ML, y, RIGHT, y);
+  y += 6;
+
+  // Footer text
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...C.grayLight);
+  doc.text(
+    "Dokumen ini dibuat secara otomatis oleh sistem Synthera.",
+    PW / 2,
+    y,
+    { align: "center" }
+  );
+  
+  y += 5;
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...C.purpleMid);
+  doc.text("Synthera · support@synthera.id", PW / 2, y, { align: "center" });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 6. DOWNLOAD PDF
+  // ════════════════════════════════════════════════════════════════════════════
+  
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const filename = `riwayat-pembelian-${today}.pdf`;
+
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

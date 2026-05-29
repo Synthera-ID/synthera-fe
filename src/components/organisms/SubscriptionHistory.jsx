@@ -21,7 +21,7 @@ import {
 import apiFetch from "@/utils/apiFetch";
 import { formatRupiah, formatDate } from "@/utils/format";
 import PaymentModal from "@/components/organisms/PaymentModal";
-import { downloadInvoice, downloadAllInvoicesAsPDF } from "@/utils/invoiceGenerator";
+import { downloadInvoice, downloadAllTransactionsAsSinglePDF } from "@/utils/invoiceGenerator";
 import { useAuth } from "@/hooks/useAuth";
 
 const STATUS_STYLES = {
@@ -53,7 +53,6 @@ export default function SubscriptionHistory() {
   const [notification, setNotif] = useState(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
-  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
 
   const showNotif = (msg, type = "success") => {
     setNotif({ msg, type });
@@ -158,53 +157,50 @@ export default function SubscriptionHistory() {
     }
   };
 
-  // Download all invoices as individual PDFs (no ZIP)
+  // Download all transactions as a single PDF file
   const handleDownloadAllInvoices = async () => {
     if (filteredData.length === 0) {
-      showNotif("Tidak ada invoice untuk didownload.", "error");
-      return;
-    }
-
-    // Filter only paid / successful transactions
-    const successfulTransactions = filteredData.filter((tx) => {
-      const status = (tx.status || tx.transaction_status || "").toLowerCase();
-      return status === "success" || status === "paid" || status === "completed";
-    });
-
-    if (successfulTransactions.length === 0) {
-      showNotif("Tidak ada transaksi yang berhasil untuk didownload.", "error");
+      showNotif("Tidak ada transaksi untuk didownload.", "error");
       return;
     }
 
     setDownloadingAll(true);
-    setDownloadProgress({ current: 0, total: successfulTransactions.length });
 
     try {
-      // Enrich all transactions with user data
-      const enrichedTransactions = successfulTransactions.map((tx) => ({
-        ...tx,
-        invoice_code: tx.invoice_code || `INV-${tx.id}`,
-        customer_name: tx.customer_name || user?.name || user?.full_name || "Customer",
-        customer_email: tx.customer_email || user?.email || "-",
-        user: user,
-      }));
-
-      // Download setiap invoice sebagai PDF langsung (bukan ZIP)
-      await downloadAllInvoicesAsPDF(enrichedTransactions, (current, total) => {
-        setDownloadProgress({ current, total });
+      // Enrich all transactions with user data and ensure plan_name is properly set
+      const enrichedTransactions = filteredData.map((tx) => {
+        // Cari nama paket dari berbagai kemungkinan field
+        const planName = 
+          tx.plan_name || 
+          tx.membership_name || 
+          tx.membership?.name ||
+          tx.plan?.name ||
+          tx.subscription_plan ||
+          tx.package_name ||
+          "Basic Plan"; // Default jika tidak ada
+        
+        return {
+          ...tx,
+          invoice_code: tx.invoice_code || `INV-${tx.id}`,
+          plan_name: planName,
+          membership_name: planName, // Backup field
+          created_by_name: tx.created_by_name || tx.created_by || "System",
+        };
       });
 
+      // Download as single PDF with table format
+      await downloadAllTransactionsAsSinglePDF(enrichedTransactions);
+
       showNotif(
-        `${successfulTransactions.length} invoice berhasil didownload sebagai PDF!`,
+        `Riwayat pembelian berhasil didownload sebagai 1 file PDF!`,
         "success"
       );
     } catch (error) {
-      console.error("Download all invoices error:", error);
-      const errorMsg = error?.message || "Gagal mendownload invoice. Silakan coba lagi.";
+      console.error("Download all transactions error:", error);
+      const errorMsg = error?.message || "Gagal mendownload riwayat pembelian. Silakan coba lagi.";
       showNotif(errorMsg, "error");
     } finally {
       setDownloadingAll(false);
-      setDownloadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -336,11 +332,7 @@ export default function SubscriptionHistory() {
             {downloadingAll ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                <span>
-                  {downloadProgress.total > 0
-                    ? `PDF ${downloadProgress.current}/${downloadProgress.total}...`
-                    : "Downloading..."}
-                </span>
+                <span>Generating PDF...</span>
               </>
             ) : (
               <>
