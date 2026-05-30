@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, twoFactorRequired, checkAuth, logout }}>
-      {loading ? <div className="flex items-center justify-center min-h-screen">Loading...</div> : children}
+      {loading ? <AuthSkeleton /> : children}
     </AuthContext.Provider>
   );
 }
@@ -104,4 +104,29 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+// ─── Auth Loading Skeleton ─────────────────────────────────────────────────────
+function AuthSkeleton() {
+  return (
+    <div className="fixed inset-0 bg-bg-1 flex flex-col items-center justify-center gap-6 z-50">
+      {/* Logo */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-primary-1/20 animate-pulse" />
+        <div className="h-5 w-24 rounded-lg bg-bg-3 animate-pulse" />
+      </div>
+
+      {/* Spinner ring */}
+      <div className="w-10 h-10 rounded-full border-2 border-primary-1/20 border-t-primary-3 animate-spin" />
+
+      {/* Skeleton bars */}
+      <div className="flex flex-col items-center gap-2.5 w-48">
+        <div className="h-3 w-full rounded-full bg-bg-3 animate-pulse" />
+        <div className="h-3 w-3/4 rounded-full bg-bg-3 animate-pulse" style={{ animationDelay: "150ms" }} />
+        <div className="h-3 w-1/2 rounded-full bg-bg-3 animate-pulse" style={{ animationDelay: "300ms" }} />
+      </div>
+
+      <p className="text-[12px] text-text-3 animate-pulse">Authenticating...</p>
+    </div>
+  );
 }

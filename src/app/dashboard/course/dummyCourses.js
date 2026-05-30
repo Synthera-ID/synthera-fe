@@ -1,0 +1,201 @@
+/**
+ * Dummy course data — sesuai struktur tabel `courses` di database.
+ * Field: id, category_id, title, slug, description, price, thumbnail_url,
+ *        content_url, video_url, tag, min_tier (basic|pro|exclusive),
+ *        is_published, category { name }
+ *
+ * min_tier = tier minimum yang dibutuhkan untuk mengakses course:
+ *   basic     → semua member bisa akses
+ *   pro       → butuh Pro atau Exclusive
+ *   exclusive → hanya Exclusive
+ */
+
+const DUMMY_COURSES = [
+  // ── BASIC (semua bisa akses) ──────────────────────────────────────────
+  {
+    id: 1,
+    category_id: 1,
+    category: { name: "AI Fundamentals" },
+    title: "Introduction to Artificial Intelligence",
+    slug: "intro-to-ai",
+    description:
+      "Pelajari dasar-dasar kecerdasan buatan: apa itu AI, sejarah perkembangannya, dan bagaimana AI mengubah industri modern. Cocok untuk pemula yang ingin memulai perjalanan di dunia AI.",
+    price: 0,
+    thumbnail_url: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/ad79nYk2keg",
+    tag: ["AI", "Beginner", "Fundamental"],
+    min_tier: "basic",
+    is_published: true,
+    duration: "1j 20m",
+    total_sections: 4,
+    instructor: "Dr. Andi Wirawan",
+  },
+  {
+    id: 2,
+    category_id: 2,
+    category: { name: "Machine Learning" },
+    title: "Machine Learning: Konsep & Aplikasi",
+    slug: "ml-konsep-aplikasi",
+    description:
+      "Mengenal konsep machine learning dari supervised, unsupervised, hingga reinforcement learning. Dilengkapi dengan contoh aplikasi nyata di berbagai industri.",
+    price: 0,
+    thumbnail_url: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/ukzFI9rgwfU",
+    tag: ["ML", "Beginner", "Data Science"],
+    min_tier: "basic",
+    is_published: true,
+    duration: "1j 45m",
+    total_sections: 5,
+    instructor: "Siti Rahayu, M.Sc",
+  },
+  {
+    id: 3,
+    category_id: 3,
+    category: { name: "Prompt Engineering" },
+    title: "Prompt Engineering untuk Pemula",
+    slug: "prompt-engineering-pemula",
+    description:
+      "Teknik menulis prompt yang efektif untuk ChatGPT, Claude, dan model AI lainnya. Pelajari cara mendapatkan output terbaik dari large language models.",
+    price: 0,
+    thumbnail_url: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/1bUy-1hGZpI",
+    tag: ["LLM", "ChatGPT", "Beginner"],
+    min_tier: "basic",
+    is_published: true,
+    duration: "55m",
+    total_sections: 3,
+    instructor: "Rizky Pratama",
+  },
+
+  // ── PRO (Pro & Exclusive) ─────────────────────────────────────────────
+  {
+    id: 4,
+    category_id: 2,
+    category: { name: "Machine Learning" },
+    title: "Supervised Learning: Regression & Classification",
+    slug: "supervised-learning",
+    description:
+      "Deep dive ke dalam algoritma supervised learning: linear regression, logistic regression, decision tree, dan random forest. Implementasi langsung menggunakan Python & scikit-learn.",
+    price: 149000,
+    thumbnail_url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/NWONeJKn6kc",
+    tag: ["Python", "scikit-learn", "Pro"],
+    min_tier: "pro",
+    is_published: true,
+    duration: "3j 10m",
+    total_sections: 8,
+    instructor: "Budi Kusuma, Ph.D",
+  },
+  {
+    id: 5,
+    category_id: 1,
+    category: { name: "AI Fundamentals" },
+    title: "Neural Networks & Deep Learning",
+    slug: "neural-networks-deep-learning",
+    description:
+      "Pahami cara kerja neural network dari layer input hingga output. Bangun model deep learning pertama kamu menggunakan TensorFlow dan Keras dengan proyek nyata.",
+    price: 149000,
+    thumbnail_url: "https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/aircAruvnKk",
+    tag: ["Deep Learning", "TensorFlow", "Keras"],
+    min_tier: "pro",
+    is_published: true,
+    duration: "4j 30m",
+    total_sections: 10,
+    instructor: "Dr. Andi Wirawan",
+  },
+  {
+    id: 6,
+    category_id: 4,
+    category: { name: "Computer Vision" },
+    title: "Computer Vision dengan OpenCV & PyTorch",
+    slug: "computer-vision-opencv",
+    description:
+      "Bangun sistem pengenalan gambar, deteksi objek, dan segmentasi menggunakan OpenCV dan model PyTorch. Dari preprocessing hingga deployment model CV.",
+    price: 149000,
+    thumbnail_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/oXlwWbU8l2o",
+    tag: ["OpenCV", "PyTorch", "Vision"],
+    min_tier: "pro",
+    is_published: true,
+    duration: "5j 15m",
+    total_sections: 12,
+    instructor: "Dewi Anggraini, M.Eng",
+  },
+  {
+    id: 7,
+    category_id: 3,
+    category: { name: "Prompt Engineering" },
+    title: "Advanced Prompt Engineering & LLM Fine-tuning",
+    slug: "advanced-prompt-llm",
+    description:
+      "Teknik lanjutan prompt engineering: chain-of-thought, few-shot, RAG (Retrieval Augmented Generation), dan fine-tuning model LLM untuk kebutuhan spesifik bisnis.",
+    price: 149000,
+    thumbnail_url: "https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/T-D1OfcDW1M",
+    tag: ["RAG", "Fine-tuning", "Advanced"],
+    min_tier: "pro",
+    is_published: true,
+    duration: "3j 40m",
+    total_sections: 9,
+    instructor: "Rizky Pratama",
+  },
+
+  // ── EXCLUSIVE ─────────────────────────────────────────────────────────
+  {
+    id: 8,
+    category_id: 5,
+    category: { name: "Generative AI" },
+    title: "Generative AI: Build & Deploy LLM Apps",
+    slug: "generative-ai-llm-apps",
+    description:
+      "Rancang dan deploy aplikasi berbasis LLM dari nol: chatbot, AI assistant, document Q&A, dan code generator. Menggunakan LangChain, OpenAI API, dan Vercel AI SDK.",
+    price: 349000,
+    thumbnail_url: "https://images.unsplash.com/photo-1655720828018-edd2daec9349?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/lG7Uxts9SXs",
+    tag: ["LangChain", "OpenAI", "LLM Apps"],
+    min_tier: "exclusive",
+    is_published: true,
+    duration: "6j 50m",
+    total_sections: 14,
+    instructor: "Tech Lead — Synthera AI",
+  },
+  {
+    id: 9,
+    category_id: 2,
+    category: { name: "Machine Learning" },
+    title: "MLOps: Production ML Systems at Scale",
+    slug: "mlops-production",
+    description:
+      "End-to-end MLOps pipeline: data versioning, model training automation, monitoring drift, CI/CD untuk ML, dan deployment ke cloud (AWS/GCP). Best practice dari engineer senior.",
+    price: 349000,
+    thumbnail_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/9BgIDqAzfuA",
+    tag: ["MLOps", "Cloud", "Production"],
+    min_tier: "exclusive",
+    is_published: true,
+    duration: "7j 20m",
+    total_sections: 16,
+    instructor: "Budi Kusuma, Ph.D",
+  },
+  {
+    id: 10,
+    category_id: 5,
+    category: { name: "Generative AI" },
+    title: "AI Agent & Multi-Agent Systems",
+    slug: "ai-agent-systems",
+    description:
+      "Desain AI agent otonom yang bisa merencanakan, menggunakan tools, dan berkolaborasi. Implementasi ReAct, AutoGen, CrewAI, dan agentic workflow untuk automasi bisnis tingkat lanjut.",
+    price: 349000,
+    thumbnail_url: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=640&q=80",
+    video_url: "https://www.youtube.com/embed/sal78ACtGTc",
+    tag: ["Agent", "AutoGen", "CrewAI"],
+    min_tier: "exclusive",
+    is_published: true,
+    duration: "8j 00m",
+    total_sections: 18,
+    instructor: "Tech Lead — Synthera AI",
+  },
+];
+
+export default DUMMY_COURSES;

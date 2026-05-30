@@ -1,17 +1,17 @@
 @import "tailwindcss";
-*,html {
+*, html {
   scroll-behavior: smooth;
 }
 @theme {
-  /* --- TYPOGRAPHY (Sesuai gambar referensi kamu) --- */
+  /* --- TYPOGRAPHY --- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui;
-  
-  --font-size-sm: 14px;      /* Deskripsi & Body */
-  --font-size-base: 16px;    /* Nav Links & Semibold */
-  --font-size-xl: 24px;      /* Dashboard Heading */
-  --font-size-4xl: 56px;     /* Hero Title */
 
-  /* --- COLORS (Sesuai tema Synthera) --- */
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-xl: 24px;
+  --font-size-4xl: 56px;
+
+  /* --- COLORS (Dark mode default) --- */
   --color-bg-1: #05050A;
   --color-bg-2: #0F0F1A;
   --color-bg-3: #1A1A2E;
@@ -29,24 +29,35 @@
 
 /* --- LIGHT MODE --- */
 :root.light {
-  --color-bg-1: #F9FAFB;
+  --color-bg-1: #F1F5F9;
   --color-bg-2: #FFFFFF;
-  --color-bg-3: #E5E7EB;
-  --color-text-1: #111827;
-  --color-text-2: #4B5563;
+  --color-bg-3: #E2E8F0;
+  --color-bg-4: #CBD5E1;
+
+  --color-primary-1: #7C3AED;
+  --color-primary-2: #6D28D9;
+  --color-primary-3: #7C3AED;
+  --color-primary-4: #8B5CF6;
+
+  --color-text-1: #0F172A;
+  --color-text-2: #334155;
+  --color-text-3: #64748B;
 }
 
 @layer base {
   body {
-    /* Gunakan variabel yang sudah kita buat di atas */
     background-color: var(--color-bg-1);
     color: var(--color-text-1);
-    @apply font-sans antialiased transition-colors duration-500;
+    @apply font-sans antialiased transition-colors duration-300;
   }
-  
+
   h1 {
-    /* Agar teks Hero rapat dan tidak tumpang tindih */
     line-height: 1.1 !important;
     letter-spacing: -0.05em !important;
   }
-}
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-bg-3); border-radius: 99px; }
+}

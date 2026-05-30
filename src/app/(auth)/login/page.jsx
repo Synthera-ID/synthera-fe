@@ -84,7 +84,7 @@ export default function Login({ searchParams }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden font-sans bg-bg-1">
+    <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden font-sans">
       {/* ── Background Pattern dari Design System ── */}
       {/* Base Center Glow (Penghubung agar tidak ada ruang hitam pekat di tengah) */}
       <div
@@ -148,11 +148,9 @@ export default function Login({ searchParams }) {
       {/* Card Login */}
       {!LoginState && (
         <div
-          className="w-full max-w-[380px] rounded-2xl p-8 z-10 relative"
+          className="w-full max-w-[380px] rounded-2xl p-8 z-10 relative bg-bg-2 border border-bg-3"
           style={{
-            background: "rgba(24, 20, 43, 0.88)",
-            border: "1px solid rgba(139,92,246,0.2)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
             backdropFilter: "blur(20px)",
           }}
         >
@@ -162,8 +160,8 @@ export default function Login({ searchParams }) {
               <Image src="/icon.png" alt="Synthera Logo" width={24} height={24} className="rounded-full" />
               <span className="text-white font-semibold text-[15px]">Synthera</span>
             </div>
-            <h2 className="text-[22px] font-bold mb-1.5 text-white">Welcome Back</h2>
-            <p className="text-[#94A3B8] text-[13px] font-normal">Sign in to your account</p>
+            <h2 className="text-[22px] font-bold mb-1.5 text-text-1">Welcome Back</h2>
+            <p className="text-text-2 text-[13px] font-normal">Sign in to your account</p>
           </div>
 
           {/* Form */}

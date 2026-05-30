@@ -10,7 +10,7 @@ export default function Input({ label, icon, inputClassName = "", ...props }) {
         
         {/* Input Field */}
         <input 
-          className={`w-full bg-bg-3/50 border border-white/[0.08] rounded-xl px-4 py-2.5 text-text-1 text-[13px] placeholder:text-text-3 focus:border-primary-1/60 focus:ring-1 focus:ring-primary-1/30 outline-none transition-all duration-300 ${icon ? 'pl-10' : ''} ${inputClassName}`}
+          className={`w-full bg-bg-3/50 border border-bg-3 rounded-xl px-4 py-2.5 text-text-1 text-[13px] placeholder:text-text-3 focus:border-primary-1/60 focus:ring-1 focus:ring-primary-1/30 outline-none transition-all duration-300 ${icon ? 'pl-10' : ''} ${inputClassName}`}
           {...props}
         />
       </div>

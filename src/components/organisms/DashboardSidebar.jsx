@@ -25,6 +25,7 @@ import {
   BadgeCheck,
   LayoutList,
   Puzzle,
+  TrendingUp,
 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
@@ -48,6 +49,7 @@ const MANAGEMENT_ITEMS = [
   { label: "Membership Management", href: "/dashboard/management/membership_management", icon: LayoutList },
   { label: "Feature Management", href: "/dashboard/management/feature_management", icon: Puzzle },
   { label: "Digital Content", href: "/dashboard/management/digital_content_management", icon: BookOpen },
+  { label: "Reports", href: "/dashboard/management/reports", icon: TrendingUp },
 ];
 
 const MANAGEMENT_ROUTES = MANAGEMENT_ITEMS.map((i) => i.href);
