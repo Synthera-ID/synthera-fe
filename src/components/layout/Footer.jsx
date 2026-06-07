@@ -25,7 +25,7 @@ export default function Footer() {
               <li><Link href="#pricing" className="hover:text-primary-3 transition-colors duration-300">Pricing</Link></li>
               <li><Link href="#features" className="hover:text-primary-3 transition-colors duration-300">Features</Link></li>
               <li><Link href="#faq" className="hover:text-primary-3 transition-colors duration-300">FAQ</Link></li>
-              <li><Link href="#" className="hover:text-primary-3 transition-colors duration-300">Components</Link></li>
+              <li><Link href="/manual" className="hover:text-primary-3 transition-colors duration-300">Manual Book</Link></li>
             </ul>
           </div>
 
