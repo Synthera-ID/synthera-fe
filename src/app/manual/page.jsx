@@ -498,7 +498,7 @@ export default function ManualBookPage() {
                   <li>Node.js versi 18.x atau yang terbaru</li>
                   <li>Package manager (npm, yarn, pnpm, atau bun)</li>
                   <li>
-                    Akses internet untuk menghubungkan ke API Backend Laravel produksi: **https://api.synthera.id/api**
+                    Akses internet untuk menghubungkan ke API Backend Laravel produksi: <strong>https://api.synthera.id/api</strong>
                   </li>
                 </ul>
               </div>
@@ -511,7 +511,7 @@ export default function ManualBookPage() {
                     <button
                       onClick={() =>
                         handleCopy(
-                          "git clone https://github.com/your-org/synthera-fe.git\ncd synthera-fe\nnpm install\ncp .env.example .env\nnpm run dev",
+                          "git clone https://github.com/Synthera-ID/synthera-fe\ncd synthera-fe\nnpm install\ncp .env.example .env\nnpm run dev",
                         )
                       }
                       className="hover:text-text-1 flex items-center gap-1.5 cursor-pointer"
@@ -523,7 +523,7 @@ export default function ManualBookPage() {
                   <pre className="p-5 overflow-x-auto text-primary-4 leading-relaxed whitespace-pre-wrap">
                     <code>
                       {`# 1. Clone repositori proyek\n`}
-                      <span className="text-text-2">{`git clone https://github.com/your-org/synthera-fe.git\ncd synthera-fe\n\n`}</span>
+                      <span className="text-text-2">{`git clone https://github.com/Synthera-ID/synthera-fe\ncd synthera-fe\n\n`}</span>
                       {`# 2. Instal semua dependensi\n`}
                       <span className="text-text-2">{`npm install\n\n`}</span>
                       {`# 3. Buat file konfigurasi env\n`}
