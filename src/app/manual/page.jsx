@@ -254,7 +254,7 @@ export default function ManualBookPage() {
   // List of sections for sidebar
   const sections = [
     { id: "pendahuluan", label: "Pendahuluan", category: "UMUM" },
-    { id: "instalasi", label: "Panduan Developer", category: "UMUM" },
+    // { id: "instalasi", label: "Panduan Developer", category: "UMUM" },
     { id: "autentikasi", label: "Autentikasi & 2FA", category: "UMUM" },
     { id: "dashboard", label: "Dashboard Utama", category: "MEMBER" },
     { id: "profil", label: "Profil & Keamanan", category: "MEMBER" },
@@ -262,7 +262,7 @@ export default function ManualBookPage() {
     { id: "api-keys", label: "API Keys", category: "MEMBER", hasSimulator: true },
     { id: "api-usage", label: "API Usage Monitor", category: "MEMBER" },
     { id: "digital-content", label: "Kursus Digital", category: "MEMBER", hasSimulator: true },
-    { id: "halaman-publik", label: "Halaman Publik & Info", category: "MEMBER" },
+    // { id: "halaman-publik", label: "Halaman Publik & Info", category: "MEMBER" },
     { id: "admin-users", label: "Manajemen User", category: "ADMIN", hasSimulator: true },
     { id: "admin-transactions", label: "Manajemen Transaksi", category: "ADMIN", hasSimulator: true },
     { id: "admin-reports", label: "Analitik & Laporan", category: "ADMIN", hasSimulator: true },
@@ -319,7 +319,8 @@ export default function ManualBookPage() {
 
         {/* Nav Links */}
         <nav className="p-4 space-y-6">
-          {["UMUM", "MEMBER", "ADMIN"].map((cat) => {
+          {/* ["UMUM", "MEMBER","ADMIN"] */}
+          {["UMUM", "MEMBER"].map((cat) => {
             const catSections = filteredSections.filter((s) => s.category === cat);
             if (catSections.length === 0) return null;
             return (
@@ -481,7 +482,7 @@ export default function ManualBookPage() {
           )}
 
           {/* SECTION: INSTALASI */}
-          {activeSection === "instalasi" && (
+          {/* {activeSection === "instalasi" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-primary-3 uppercase tracking-widest">Setup Lingkungan</span>
@@ -549,7 +550,7 @@ export default function ManualBookPage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* SECTION: AUTENTIKASI */}
           {activeSection === "autentikasi" && (
@@ -666,7 +667,7 @@ export default function ManualBookPage() {
                       <span className="text-xs font-semibold text-text-2">Paket Langganan</span>
                     </div>
                     <div className="mt-4">
-                      <span className="text-xl font-bold block">PRO MEMBERSHIP</span>
+                      <span className="text-xl font-bold block">Pro Membership</span>
                       <span className="text-[11px] text-text-3">Aktif s/d 20 Juli 2026</span>
                     </div>
                   </div>
@@ -1348,7 +1349,7 @@ export default function ManualBookPage() {
           )}
 
           {/* SECTION: HALAMAN PUBLIK */}
-          {activeSection === "halaman-publik" && (
+          {/* {activeSection === "halaman-publik" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-primary-3 uppercase tracking-widest">Informasi Umum</span>
@@ -1413,7 +1414,7 @@ export default function ManualBookPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* SECTION: ADMIN - USER MANAGEMENT (WITH UPDATE & SIMULATOR) */}
           {activeSection === "admin-users" && (
