@@ -43,3 +43,10 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# Documentation files (local only)
+/*.md
+!README.md
+
+# Backup files
+*.backup
