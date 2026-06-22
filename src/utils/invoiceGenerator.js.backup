@@ -1,34 +1,37 @@
 /**
  * Invoice Generator Utility
  * Client-side only – uses jsPDF + jspdf-autotable
- * 
- * UPDATED: Now uses reusable PDF components for consistency
+ *
+ * Layout (top → bottom):
+ *  1. Top accent bar  (purple | orange)
+ *  2. Header          Logo + Brand Name (left) | "INVOICE" (right)
+ *  3. Meta section    Invoice info (left) | Amount box (right)
+ *  4. Bill-To section Customer details (left)
+ *  5. Divider line    (purple, thin)
+ *  6. Items table     Description / Qty / Amount
+ *  7. Total section   Subtotal + Total (right-aligned)
+ *  8. Footer divider  (purple, thin)
+ *  9. Notes & Terms   (left | right)
  */
 
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import {
-  PDF_COLORS,
-  loadLogoBase64,
-  drawLinearGradient,
-  drawGlowEffect,
-  drawPremiumHeader,
-  drawPremiumFooter,
-  openPDFPreview,
-} from "./pdfComponents";
 
-// Legacy color mappings untuk backward compatibility dengan invoice lama
+// ─── Color Palette ────────────────────────────────────────────────────────────
 const C = {
-  ...PDF_COLORS,
-  // Tambahan untuk backward compatibility
-  purple: [111, 66, 193],
-  purpleLight: [237, 233, 254],
-  purpleMid: [139, 92, 246],
-  orange: [255, 145, 0],
-  divider: [196, 181, 253],
+  purple: [111, 66, 193],   // #6f42c1 – primary purple (sesuai instruksi)
+  purpleLight: [237, 233, 254],  // #ede9fe – soft purple bg
+  purpleMid: [139, 92, 246],  // #8b5cf6 – medium purple (accents)
+  orange: [255, 145, 0],  // #ff9100 – accent orange (sesuai instruksi)
+  grayDark: [31, 41, 55],  // #1f2937 – near-black text
+  grayMid: [75, 85, 99],  // #4b5563 – body text
+  grayLight: [156, 163, 175],  // #9ca3af – muted labels
+  grayBg: [249, 250, 251],  // #f9fafb – table header bg
+  white: [255, 255, 255],
+  divider: [196, 181, 253],  // #c4b5fd – purple divider
 };
 
-// Status colour map (Premium style)
+// Status colour map
 const STATUS_COLORS = {
   paid: [16, 185, 129],
   success: [16, 185, 129],
@@ -70,6 +73,25 @@ function getStatus(transaction) {
     (transaction.status || transaction.transaction_status || "pending")
       .toLowerCase()
   );
+}
+
+/** Load icon.png → base64 dataURL so jsPDF can embed it */
+async function loadLogoBase64() {
+  try {
+    // Try the Next.js public path first
+    const url = "/icon.png";
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null; // Skip logo gracefully if unavailable
+  }
 }
 
 // ─── Core Generator ───────────────────────────────────────────────────────────
@@ -541,7 +563,6 @@ export async function downloadAllInvoicesAsPDF(transactions, onProgress) {
 /**
  * Download all transactions as a single PDF file with table format.
  * Generates one PDF containing all transaction data in a table.
- * Shows preview before downloading.
  *
  * @param {Object[]} transactions - Array of transaction objects
  */
@@ -572,54 +593,34 @@ export async function downloadAllTransactionsAsSinglePDF(transactions) {
   const logoBase64 = await loadLogoBase64();
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 1. PREMIUM HEADER (Navy → Royal Blue Gradient)
+  // 1. TOP ACCENT BAR (Purple | Orange split)
   // ════════════════════════════════════════════════════════════════════════════
-  const headerHeight = 50;
+  const accentH = 8;
+  const orangeW = 100;
   
-  // Draw premium linear gradient from navyDarkest (left) to royalBlue (right)
-  drawLinearGradient(doc, 0, 0, PW, headerHeight, C.navyDarkest, C.royalBlue);
+  doc.setFillColor(...C.purple);
+  doc.rect(0, 0, PW - orangeW, accentH, 'F');
   
-  // Glow effect disabled to prevent blocking text
-  // drawGlowEffect(doc, PW, headerHeight, 60, C.glowBlue);
+  doc.setFillColor(...C.orange);
+  doc.rect(PW - orangeW, 0, orangeW, accentH, 'F');
 
-  let y = 12;
+  let y = accentH + 15;
 
-  // Logo + Brand Name (Top Left)
+  // ════════════════════════════════════════════════════════════════════════════
+  // 2. HEADER SECTION
+  // ════════════════════════════════════════════════════════════════════════════
+  
+  // Logo (Left)
   if (logoBase64) {
-    const logoSize = 14;
+    const logoSize = 16;
     doc.addImage(logoBase64, "PNG", ML, y, logoSize, logoSize);
   }
 
-  // Brand Name & Subtitle (Left, next to logo)
-  const brandX = ML + 18;
-  let brandY = y + 5;
-  
+  // Title (Center)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...C.white);
-  doc.text("SYNTHERA ID", brandX, brandY);
-  
-  brandY += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(200, 210, 220); // Light gray
-  doc.text("E Course Membership System", brandX, brandY);
-
-  // Title "INVOICE" atau "RIWAYAT PEMBELIAN" (Center Right area)
-  const titleX = PW / 2 + 30;
-  const titleY = y + 10;
-  
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...C.white);
-  doc.text("RIWAYAT PEMBELIAN", titleX, titleY);
-
-  // Invoice Number & Status badge (Top Right - jika ada)
-  const invoiceNumberY = y + 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...C.accentCyan);
-  doc.text(`#${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(transactions.length).padStart(4, '0')}`, RIGHT, invoiceNumberY, { align: "right" });
+  doc.setFontSize(24);
+  doc.setTextColor(...C.purple);
+  doc.text("RIWAYAT PEMBELIAN", PW / 2, y + 8, { align: "center" });
 
   // Export Info (Right)
   const exportDate = new Date().toLocaleDateString("id-ID", {
@@ -628,90 +629,28 @@ export async function downloadAllTransactionsAsSinglePDF(transactions) {
     year: "numeric",
   });
   
-  let infoY = invoiceNumberY + 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.grayMid);
+  doc.text(`Tanggal Export: ${exportDate}`, RIGHT, y + 4, { align: "right" });
   
-  // Status badge "LUNAS / PAID" (jika semua paid) - opsional
-  const allPaid = transactions.every(tx => {
-    const status = getStatus(tx);
-    return status === 'paid' || status === 'success' || status === 'completed';
-  });
-  
-  if (allPaid && transactions.length > 0) {
-    // Draw status badge
-    const badgeText = "[LUNAS / PAID]";
-    const badgeWidth = doc.getTextWidth(badgeText) + 8;
-    const badgeX = RIGHT - badgeWidth;
-    const badgeY = infoY - 4;
-    
-    doc.setFillColor(16, 185, 129); // Green
-    doc.roundedRect(badgeX, badgeY, badgeWidth, 6, 2, 2, 'F');
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(...C.white);
-    doc.text(badgeText, badgeX + 4, badgeY + 4.5);
-    
-    infoY += 8;
-  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.purpleMid);
+  doc.text(`Total Transaksi: ${transactions.length}`, RIGHT, y + 10, { align: "right" });
 
-  // Info box bawah header (TANGGAL DITERBITKAN, JATUH TEMPO, TANGGAL PEMBAYARAN, MATA UANG)
-  y = headerHeight - 16;
-  const infoBoxStartX = ML;
-  const infoBoxSpacing = (PW - ML - MR) / 4;
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(150, 160, 180);
-  
-  // TANGGAL DITERBITKAN
-  doc.text("TANGGAL DITERBITKAN", infoBoxStartX, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(...C.white);
-  doc.text(exportDate, infoBoxStartX, y + 4);
-  
-  // JATUH TEMPO
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(150, 160, 180);
-  doc.text("JATUH TEMPO", infoBoxStartX + infoBoxSpacing, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(...C.white);
-  doc.text("-", infoBoxStartX + infoBoxSpacing, y + 4);
-  
-  // TANGGAL PEMBAYARAN
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(150, 160, 180);
-  doc.text("TANGGAL PEMBAYARAN", infoBoxStartX + infoBoxSpacing * 2, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(...C.white);
-  doc.text(exportDate, infoBoxStartX + infoBoxSpacing * 2, y + 4);
-  
-  // MATA UANG
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(150, 160, 180);
-  doc.text("MATA UANG", infoBoxStartX + infoBoxSpacing * 3, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(...C.white);
-  doc.text("IDR (Rp)", infoBoxStartX + infoBoxSpacing * 3, y + 4);
-
-  y = headerHeight + 12;
+  y += 25;
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 2. DIVIDER LINE (Thin Navy)
+  // 3. DIVIDER LINE
   // ════════════════════════════════════════════════════════════════════════════
-  doc.setDrawColor(200, 210, 220);
-  doc.setLineWidth(0.3);
+  doc.setDrawColor(...C.divider);
+  doc.setLineWidth(0.5);
   doc.line(ML, y, RIGHT, y);
   y += 8;
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 3. PREMIUM TRANSACTIONS TABLE (Navy Header + Zebra Striping)
+  // 4. TRANSACTIONS TABLE
   // ════════════════════════════════════════════════════════════════════════════
   
   const tableHead = [["NO", "INVOICE", "PAKET", "HARGA", "STATUS", "TANGGAL", "PEMBUAT"]];
@@ -751,31 +690,31 @@ export async function downloadAllTransactionsAsSinglePDF(transactions) {
     theme: "plain",
 
     headStyles: {
-      fillColor: C.navyDarkest,   // Navy sangat gelap untuk header table (consistency)
-      textColor: C.white,          // Teks putih
+      fillColor: C.purple,
+      textColor: C.white,
       fontSize: 9,
       fontStyle: "bold",
-      cellPadding: { top: 7, bottom: 7, left: 5, right: 5 },
+      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
       halign: "center",
       valign: "middle",
-      minCellHeight: 12,
-      lineWidth: 0,                // No border untuk header
+      minCellHeight: 10,
+      lineWidth: { bottom: 0.5 },
+      lineColor: [224, 224, 224], // #e0e0e0
       overflow: 'linebreak',
     },
 
     bodyStyles: {
       textColor: C.grayDark,
       fontSize: 8,
-      cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
-      lineWidth: { bottom: 0.2 },  // Border tipis antar baris
-      lineColor: [230, 235, 240],  // Border abu-abu sangat halus
+      cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+      lineWidth: { bottom: 0.3 },
+      lineColor: [224, 224, 224], // #e0e0e0 - garis horizontal antar baris
       valign: "middle",
       overflow: 'linebreak',
-      minCellHeight: 11,
     },
 
     alternateRowStyles: {
-      fillColor: C.grayBg,         // Zebra striping dengan light gray (seperti referensi)
+      fillColor: C.purpleLight,
     },
 
     columnStyles: {
@@ -839,11 +778,11 @@ export async function downloadAllTransactionsAsSinglePDF(transactions) {
         data.cell.styles.cellPadding = { top: 5, bottom: 5, left: 4, right: 4 };
       }
       
-      // Style untuk kolom HARGA (navy accent & bold & center - seperti referensi)
+      // Style untuk kolom HARGA (purple & bold & center)
       if (data.section === "body" && data.column.index === 3) {
-        data.cell.styles.textColor = C.navyMid;  // Navy untuk harga (premium look)
+        data.cell.styles.textColor = C.purple;
         data.cell.styles.fontStyle = "bold";
-        data.cell.styles.halign = "center";
+        data.cell.styles.halign = "center"; // Center agar sejajar seperti STATUS, TANGGAL
         data.cell.styles.valign = "middle";
         data.cell.styles.overflow = 'linebreak';
       }
@@ -885,243 +824,50 @@ export async function downloadAllTransactionsAsSinglePDF(transactions) {
     },
   });
 
-  y = doc.lastAutoTable.finalY + 12;
+  y = doc.lastAutoTable.finalY + 10;
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 4. PREMIUM FOOTER (Navy Solid Background - 3 Kolom seperti referensi invoice)
+  // 5. FOOTER
   // ════════════════════════════════════════════════════════════════════════════
   
-  // Ensure footer is at consistent position (or at bottom if space allows)
-  const footerHeight = 35;
-  const footerY = Math.max(y, PH - footerHeight - 5);
-  
-  // Navy solid background untuk footer (tidak gradasi, tetap solid)
-  doc.setFillColor(...C.navyDarkest);
-  doc.rect(0, footerY, PW, footerHeight, 'F');
-  
-  let fY = footerY + 8;
-  
-  // Calculate footer columns (3 sections)
-  const footerCol1 = ML;                    // Kiri: Logo + Brand
-  const footerCol2 = PW / 2;                // Tengah: Dokumen Resmi
-  const footerCol3 = RIGHT - 55;            // Kanan: Kontak
-  
-  // ── KOLOM KIRI: Logo + Brand ──────────────────────────────────────────────
-  if (logoBase64) {
-    const logoSize = 10;
-    doc.addImage(logoBase64, "PNG", footerCol1, fY, logoSize, logoSize);
-  }
-  
-  const brandFooterX = footerCol1 + 12;
-  let brandFooterY = fY + 4;
-  
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...C.white);
-  doc.text("SYNTHERA ID", brandFooterX, brandFooterY);
-  
-  brandFooterY += 4;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(180, 190, 200);
-  doc.text("E Course Membership System", brandFooterX, brandFooterY);
-  
-  // ── KOLOM TENGAH: Icon Dokumen Resmi ──────────────────
-  const centerY = fY + 6;
-  
-  // Draw star icon simulation (using text) - changed to avoid unicode issues
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.accentCyan);
-  doc.text("[*]", footerCol2 - 10, centerY, { align: "center" });
-  
+  // Footer divider
+  doc.setDrawColor(...C.divider);
+  doc.setLineWidth(0.5);
+  doc.line(ML, y, RIGHT, y);
+  y += 6;
+
+  // Footer text
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(180, 190, 200);
-  doc.text("DOKUMEN RESMI", footerCol2 + 5, centerY, { align: "center" });
-  
-  // ── KOLOM KANAN: Kontak ───────────────────────────────────────────────────
-  let contactY = fY + 3;
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(180, 190, 200);
-  doc.text("support@synthera.id", footerCol3, contactY);
-  
-  contactY += 5;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.accentCyan);
-  doc.text("https://synthera.id", footerCol3, contactY);
-  
-  // ── Footer Disclaimer (bawah footer navy) ─────────────────────────────────
-  fY = footerY + footerHeight + 3;
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
   doc.setTextColor(...C.grayLight);
   doc.text(
-    "Dokumen ini dibuat secara otomatis oleh sistem Synthera ID. Apabila terdapat pertanyaan terkait dokumen ini,",
+    "Dokumen ini dibuat secara otomatis oleh sistem Synthera.",
     PW / 2,
-    fY,
+    y,
     { align: "center" }
   );
   
-  fY += 3;
-  doc.text(
-    "silakan hubungi support@synthera.id dalam 7 hari kerja sejak tanggal penerbitan.",
-    PW / 2,
-    fY,
-    { align: "center" }
-  );
+  y += 5;
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...C.purpleMid);
+  doc.text("Synthera · support@synthera.id", PW / 2, y, { align: "center" });
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 5. PREVIEW & DOWNLOAD PDF
+  // 6. DOWNLOAD PDF
   // ════════════════════════════════════════════════════════════════════════════
   
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const filename = `riwayat-pembelian-${today}.pdf`;
 
-  // Open PDF in new tab for preview (tidak langsung download)
-  const pdfDataUri = doc.output('dataurlstring');
-  const previewWindow = window.open('', '_blank');
-  
-  if (previewWindow) {
-    previewWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Preview: ${filename}</title>
-          <meta charset="UTF-8">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              background: #1a1a1a; 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              overflow: hidden;
-            }
-            .toolbar {
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: 60px;
-              background: linear-gradient(135deg, #0F172A 0%, #2563EB 100%);
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              padding: 0 24px;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              z-index: 1000;
-            }
-            .toolbar-left {
-              display: flex;
-              align-items: center;
-              gap: 16px;
-            }
-            .toolbar-title {
-              color: white;
-              font-size: 16px;
-              font-weight: 600;
-            }
-            .toolbar-subtitle {
-              color: rgba(255,255,255,0.7);
-              font-size: 13px;
-            }
-            .toolbar-actions {
-              display: flex;
-              gap: 12px;
-            }
-            .btn {
-              padding: 10px 20px;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-            .btn-download {
-              background: #00C2FF;
-              color: white;
-            }
-            .btn-download:hover {
-              background: #00A8E0;
-              transform: translateY(-1px);
-              box-shadow: 0 4px 12px rgba(0,194,255,0.3);
-            }
-            .btn-close {
-              background: rgba(255,255,255,0.1);
-              color: white;
-            }
-            .btn-close:hover {
-              background: rgba(255,255,255,0.2);
-            }
-            .pdf-container {
-              position: fixed;
-              top: 60px;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: #2a2a2a;
-            }
-            iframe {
-              width: 100%;
-              height: 100%;
-              border: none;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="toolbar">
-            <div class="toolbar-left">
-              <div>
-                <div class="toolbar-title">📄 Preview Riwayat Pembelian</div>
-                <div class="toolbar-subtitle">${filename}</div>
-              </div>
-            </div>
-            <div class="toolbar-actions">
-              <button class="btn btn-download" onclick="downloadPDF()">
-                <span>⬇</span>
-                <span>Download PDF</span>
-              </button>
-              <button class="btn btn-close" onclick="window.close()">
-                <span>✕</span>
-                <span>Tutup</span>
-              </button>
-            </div>
-          </div>
-          <div class="pdf-container">
-            <iframe src="${pdfDataUri}"></iframe>
-          </div>
-          <script>
-            function downloadPDF() {
-              const link = document.createElement('a');
-              link.href = '${pdfDataUri}';
-              link.download = '${filename}';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    previewWindow.document.close();
-  } else {
-    // Fallback jika popup diblokir - langsung download
-    alert('Popup diblokir! PDF akan didownload langsung.');
-    const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

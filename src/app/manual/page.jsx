@@ -44,6 +44,7 @@ import {
   FileText,
 } from "lucide-react";
 import Image from "next/image";
+import { downloadManualBookPDF } from "@/utils/manualBookGenerator";
 
 // --- TIER METADATA ---
 const TIER_META = {
@@ -273,8 +274,17 @@ export default function ManualBookPage() {
   // Search filter
   const filteredSections = sections.filter((sec) => sec.label.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const triggerPrint = () => {
-    window.print();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const triggerDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      await downloadManualBookPDF(activeSection);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   return (
@@ -389,11 +399,21 @@ export default function ManualBookPage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={triggerPrint}
-              className="p-2.5 rounded-xl border border-bg-3 hover:bg-bg-3/60 text-text-2 hover:text-text-1 transition-all text-[12px] font-medium flex items-center gap-1.5 cursor-pointer"
+              onClick={triggerDownloadPDF}
+              disabled={isGeneratingPDF}
+              className="p-2.5 rounded-xl border border-bg-3 hover:bg-bg-3/60 text-text-2 hover:text-text-1 transition-all text-[12px] font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Printer size={14} />
-              <span>Cetak PDF</span>
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>Download PDF</span>
+                </>
+              )}
             </button>
             <ThemeToggle />
           </div>
