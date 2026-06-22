@@ -127,87 +127,31 @@ export function generateInvoicePDF(transaction, options = {}) {
     "Pembayaran bersifat final. Jika ada pertanyaan mengenai invoice ini, silakan hubungi support@synthera.id dalam 30 hari kerja.";
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 1. TOP ACCENT BAR (Purple | Orange split)
+  // 1. PREMIUM HEADER (using drawPremiumHeader for consistency)
   // ════════════════════════════════════════════════════════════════════════════
-  const accentH = 8;
-  const orangeW = 70; // Width of orange section
+  const exportDate = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
   
-  // Purple section (left)
-  doc.setFillColor(...C.purple);
-  doc.rect(0, 0, PW - orangeW, accentH, 'F');
-  
-  // Orange section (right)
-  doc.setFillColor(...C.orange);
-  doc.rect(PW - orangeW, 0, orangeW, accentH, 'F');
+  const currentY = drawPremiumHeader(doc, {
+    title: "INVOICE",
+    documentNumber: transaction.invoice_code || "-",
+    logoBase64: options.logoBase64,
+    pageWidth: PW,
+    marginLeft: ML,
+    marginRight: MR,
+    withGlow: false,
+    infoBoxes: {
+      box1: { label: "TANGGAL DITERBITKAN", value: exportDate },
+      box2: { label: "JATUH TEMPO", value: formatDate(transaction.due_date) || "-" },
+      box3: { label: "STATUS", value: statusLabel },
+      box4: { label: "MATA UANG", value: "IDR (Rp)" },
+    },
+  });
 
-  let y = accentH + 15;
-
-  // ── Brand Section (Left) ───────────────────────────────────────────────────
-  let bx = ML;
-  let by = y;
-
-  if (options.logoBase64) {
-    const logoSize = 16;
-    doc.addImage(options.logoBase64, "PNG", bx, by, logoSize, logoSize);
-    by += logoSize + 3;
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(...C.grayDark);
-  doc.text("Synthera", bx, by);
-  
-  by += 6;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...C.grayMid);
-  doc.text("Indonesia", bx, by);
-  
-  by += 5;
-  doc.setFontSize(8.5);
-  doc.setTextColor(...C.grayLight);
-  doc.text("support@synthera.id", bx, by);
-
-  // ── Invoice Section (Right) ────────────────────────────────────────────────
-  let ry = y;
-  
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
-  doc.setTextColor(...C.purpleMid);
-  doc.text("INVOICE", RIGHT, ry, { align: "right" });
-  
-  ry += 10;
-  
-  // Invoice Number
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...C.grayDark);
-  doc.text(transaction.invoice_code || "-", RIGHT, ry, { align: "right" });
-  
-  ry += 8;
-  
-  // Issued date
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...C.grayLight);
-  doc.text("Issued", RIGHT - 35, ry, { align: "right" });
-  doc.setTextColor(...C.grayMid);
-  // PERBAIKAN: Bind ke data statis dari transaction
-  doc.text(formatDate(transaction.created_at || transaction.transaction_date), RIGHT, ry, { align: "right" });
-  
-  ry += 5;
-  
-  // Due date
-  doc.setTextColor(...C.grayLight);
-  doc.text("Due", RIGHT - 35, ry, { align: "right" });
-  doc.setTextColor(...C.grayMid);
-  // PERBAIKAN: Conditional rendering - jika PAID tampilkan "-", jika PENDING tampilkan tanggal
-  const dueDate = (status === 'paid' || status === 'success' || status === 'completed') 
-    ? "-" 
-    : formatDate(transaction.expired_at || transaction.due_date);
-  doc.text(dueDate, RIGHT, ry, { align: "right" });
-
-  y = Math.max(by, ry) + 10;
+  let y = currentY;
 
   // ════════════════════════════════════════════════════════════════════════════
   // 2. BILL TO SECTION (Left) & AMOUNT DUE BOX (Right)
@@ -407,15 +351,7 @@ export function generateInvoicePDF(transaction, options = {}) {
   y += 16;
 
   // ════════════════════════════════════════════════════════════════════════════
-  // 6. FOOTER DIVIDER
-  // ════════════════════════════════════════════════════════════════════════════
-  doc.setDrawColor(...C.divider);
-  doc.setLineWidth(0.5);
-  doc.line(ML, y, RIGHT, y);
-  y += 8;
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // 7. NOTES (left) & TERMS (right) – side by side
+  // 6. NOTES (left) & TERMS (right) – side by side
   // ════════════════════════════════════════════════════════════════════════════
   const colMid = ML + CW / 2 + 6;
   const colW = CW / 2 - 8;
@@ -444,14 +380,20 @@ export function generateInvoicePDF(transaction, options = {}) {
   const splitTerms = doc.splitTextToSize(terms, colW);
   doc.text(splitTerms, colMid, y + 5);
 
-  // ── Bottom brand watermark ────────────────────────────────────────────────
   const notesHeight = Math.max(splitNotes.length, splitTerms.length) * 3.2;
-  const watermarkY = Math.min(y + notesHeight + 16, PH - 10);
+  y += notesHeight + 12;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(...C.divider);
-  doc.text("Synthera · support@synthera.id", PW / 2, watermarkY, { align: "center" });
+  // ════════════════════════════════════════════════════════════════════════════
+  // 7. PREMIUM FOOTER (using drawPremiumFooter for consistency)
+  // ════════════════════════════════════════════════════════════════════════════
+  drawPremiumFooter(doc, {
+    logoBase64: options.logoBase64,
+    pageWidth: PW,
+    pageHeight: PH,
+    marginLeft: ML,
+    marginRight: MR,
+    currentY: y,
+  });
 
   return doc;
 }
@@ -460,27 +402,21 @@ export function generateInvoicePDF(transaction, options = {}) {
 
 /**
  * Download single invoice PDF
- * Loads the logo async then generates + saves.
+ * Shows preview (same simple approach as Manual Book - fastest method)
  */
 export async function downloadInvoice(transaction) {
   if (!transaction) throw new Error("Transaction data is required");
   if (!transaction.invoice_code) throw new Error("Invoice code is required");
   if (transaction.amount == null) throw new Error("Transaction amount is required");
 
+  const filename = `invoice-${transaction.invoice_code}.pdf`;
+  
+  // Generate PDF first (fastest approach, no about:blank delay)
   const logoBase64 = await loadLogoBase64();
   const doc = generateInvoicePDF(transaction, { logoBase64 });
-
-  // Use blob + <a> click for reliable PDF download in Chrome
-  // (avoids any MIME-type / extension ambiguity that triggers ZIP behaviour)
-  const blob = doc.output("blob");
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href     = url;
-  link.download = `invoice-${transaction.invoice_code}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  
+  // Use openPDFPreview helper (same as Manual Book)
+  openPDFPreview(doc, filename, "Invoice Preview");
 }
 
 /**

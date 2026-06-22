@@ -62,6 +62,7 @@ export default function SubscriptionHistory() {
   // Download single invoice handler
   const handleDownloadInvoice = async (transaction) => {
     setDownloadingId(transaction.id);
+    
     try {
       // Validate transaction data
       if (!transaction || !transaction.id) {
@@ -70,80 +71,43 @@ export default function SubscriptionHistory() {
 
       // Cek apakah invoice_code ada
       if (!transaction.invoice_code) {
-        showNotif("Invoice tidak ditemukan untuk transaksi ini.", "error");
-        return;
+        throw new Error("Invoice tidak ditemukan untuk transaksi ini.");
       }
 
-      // Simpan nilai penting dari item list SEBELUM fetch API
-      const originalCreatedAt = transaction.created_at;
-      const originalPlanName  =
-        transaction.plan_name ||
-        transaction.plan?.name ||
-        null;
-      const originalStatus = transaction.status || transaction.transaction_status;
-
-      // Fetch full transaction details if needed
-      let fullTransaction = transaction;
-      if (!transaction.customer_name || !transaction.customer_email) {
-        try {
-          const res = await apiFetch.get(`/transactions/${transaction.id}`);
-          // Jika response 404 atau data kosong, invoice tidak ditemukan
-          if (!res) throw new Error("Invoice tidak ditemukan di server.");
-          fullTransaction = res?.data || res;
-        } catch (err) {
-          // Jika 404, tampilkan error jelas
-          if (err?.status === 404) {
-            throw new Error(`Invoice ${transaction.invoice_code} tidak ditemukan.`);
-          }
-          // Error lain: lanjutkan dengan data yang ada
-          console.log("Could not fetch full details, using existing data", err);
-        }
-      }
-
+      // Build enriched transaction directly from available data (NO API FETCH for speed)
       const enrichedTransaction = {
-        ...fullTransaction,
-        invoice_code:
-          fullTransaction.invoice_code || `INV-${fullTransaction.id}`,
+        ...transaction,
+        invoice_code: transaction.invoice_code || `INV-${transaction.id}`,
         plan_name:
-          fullTransaction.plan_name  ||
-          fullTransaction.plan?.name ||
-          originalPlanName           ||
+          transaction.plan_name ||
+          transaction.plan?.name ||
+          transaction.membership_name ||
           "Subscription Plan",
-        amount: fullTransaction.amount || 0,
+        amount: transaction.amount || 0,
         status:
-          originalStatus ||
-          fullTransaction.status ||
-          fullTransaction.transaction_status ||
+          transaction.status ||
+          transaction.transaction_status ||
           "pending",
-        created_at:
-          originalCreatedAt          ||
-          fullTransaction.created_at ||
-          new Date().toISOString(),
-        expired_at:
-          fullTransaction.expired_at ||
-          fullTransaction.due_date   ||
-          null,
+        created_at: transaction.created_at || new Date().toISOString(),
+        due_date: transaction.expired_at || transaction.due_date || null,
         customer_name:
-          fullTransaction.customer_name ||
+          transaction.customer_name ||
           user?.name ||
           user?.full_name ||
           "Customer",
         customer_email:
-          fullTransaction.customer_email ||
+          transaction.customer_email ||
           user?.email ||
           "-",
         user: user,
       };
 
       // Validate required fields
-      if (!enrichedTransaction.invoice_code) {
-        throw new Error("Invoice tidak ditemukan.");
-      }
       if (!enrichedTransaction.amount && enrichedTransaction.amount !== 0) {
         throw new Error("Data invoice tidak lengkap (jumlah tidak tersedia).");
       }
 
-      // Generate & download PDF langsung (tanpa ZIP)
+      // Generate & download PDF directly (no API fetch, fastest)
       await downloadInvoice(enrichedTransaction);
       showNotif(`Invoice ${enrichedTransaction.invoice_code} berhasil didownload!`, "success");
     } catch (error) {
