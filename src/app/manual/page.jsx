@@ -401,7 +401,7 @@ export default function ManualBookPage() {
             <button
               onClick={triggerDownloadPDF}
               disabled={isGeneratingPDF}
-              className="p-2.5 rounded-xl border border-bg-3 hover:bg-bg-3/60 text-text-2 hover:text-text-1 transition-all text-[12px] font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 rounded-xl bg-primary-1 hover:bg-primary-1/90 text-white shadow-md shadow-primary-1/30 transition-all text-[12px] font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGeneratingPDF ? (
                 <>
@@ -1368,14 +1368,14 @@ export default function ManualBookPage() {
           )}
 
           {/* SECTION: HALAMAN PUBLIK */}
-          {/* {activeSection === "halaman-publik" && (
+          {activeSection === "halaman-publik" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-primary-3 uppercase tracking-widest">Informasi Umum</span>
-                <h2 className="text-3xl font-extrabold tracking-tight">Halaman Publik & Info Umum</h2>
+                <h2 className="text-3xl font-extrabold tracking-tight">Halaman Publik &amp; Info Umum</h2>
                 <p className="text-text-2 text-sm leading-relaxed">
-                  Berikut adalah daftar path rute publik dan terproteksi yang tersedia untuk role **Member** (tidak
-                  termasuk rute `/course` publik karena katalog kursus sudah dialihkan langsung di dalam dashboard
+                  Berikut adalah daftar path rute publik dan terproteksi yang tersedia untuk role Member (tidak
+                  termasuk rute <code className="text-primary-3 bg-bg-3 px-1 rounded">/course</code> publik karena katalog kursus sudah dialihkan langsung di dalam dashboard
                   member):
                 </p>
               </div>
@@ -1433,7 +1433,7 @@ export default function ManualBookPage() {
                 ))}
               </div>
             </div>
-          )} */}
+          )}
 
           {/* SECTION: ADMIN - USER MANAGEMENT (WITH UPDATE & SIMULATOR) */}
           {activeSection === "admin-users" && (

@@ -7,6 +7,7 @@ import {
   AlertCircle, ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { openExcelPreview } from "@/utils/excelGenerator";
 import apiFetch from "@/utils/apiFetch";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -209,31 +210,28 @@ export default function ReportsPage() {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 5);
 
-  // ── Export CSV ──
-  function handleExportCSV() {
-    const header = ["Invoice", "User", "Email", "Plan", "Amount", "Status", "Date", "PaymentMethod"];
+  // ── Export ──
+  function handleExportExcel() {
+    if (filteredTx.length === 0) return;
+    
+    const header = ["Invoice", "User", "Email", "Plan", "Amount (IDR)", "Status", "Date", "Payment Method"];
     const rows = filteredTx.map((t) => [
       t.invoice_code ?? "-",
       t.user?.name ?? "-",
       t.user?.email ?? "-",
       t.plan?.name ?? "-",
-      t.final_amount ?? 0,
+      Number(t.final_amount ?? 0),
       t.transaction_status ?? "-",
       t.created_at ? new Date(t.created_at).toISOString().slice(0, 10) : "-",
       t.payment?.payment_method ?? "-",
     ]);
-    const escape = (v) => {
-      const s = String(v);
-      return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const csv = [header, ...rows].map((r) => r.map(escape).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `synthera_report_${period}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    openExcelPreview({
+      header,
+      rows,
+      filename: `synthera_report_${period}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      documentTitle: `Reports & Analytics - ${period}`,
+    });
   }
 
   // ── Loading / Error ──
@@ -288,11 +286,11 @@ export default function ReportsPage() {
           </div>
           {/* Export */}
           <button
-            onClick={handleExportCSV}
+            onClick={handleExportExcel}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-1 hover:bg-primary-2 text-white font-semibold text-[13px] transition-all duration-200 shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.4)]"
           >
             <Download size={15} />
-            Export CSV
+            Export Excel
           </button>
         </div>
       </header>

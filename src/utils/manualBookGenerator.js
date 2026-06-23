@@ -528,21 +528,18 @@ function generateGenericContent(doc, section, y, PW, PH, ML, MR) {
 }
 
 /**
- * Generate Manual Book PDF
+ * Generate Manual Book PDF with dynamic height based on content
  */
 export async function generateManualBookPDF(activeSection = "pendahuluan") {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-
-  const PW = doc.internal.pageSize.getWidth();
-  const PH = doc.internal.pageSize.getHeight();
+  const PW = 210; // A4 width in mm
   const ML = 15;
   const MR = 15;
 
   const logoBase64 = await loadLogoBase64();
-  
+
   const today = new Date();
   const docNumber = `#MB-${activeSection.toUpperCase()}-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-  
+
   const exportDate = today.toLocaleDateString("id-ID", {
     day: "numeric",
     month: "long",
@@ -551,7 +548,54 @@ export async function generateManualBookPDF(activeSection = "pendahuluan") {
 
   const sectionMeta = SECTION_METADATA[activeSection] || SECTION_METADATA["pendahuluan"];
 
-  // Header
+  // ── PASS 1: Measure content height using a tall temporary doc ──
+  const MEASURE_H = 9999;
+  const measureDoc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: [PW, MEASURE_H],
+  });
+
+  const headerEndY = drawPremiumHeader(measureDoc, {
+    title: sectionMeta.title,
+    documentNumber: docNumber,
+    logoBase64,
+    pageWidth: PW,
+    marginLeft: ML,
+    marginRight: MR,
+    withGlow: false,
+    infoBoxes: {
+      box1: { label: "TANGGAL DITERBITKAN", value: exportDate },
+      box2: { label: "VERSI", value: "v1.0" },
+      box3: { label: "KATEGORI", value: sectionMeta.category },
+      box4: { label: "SECTION", value: activeSection.toUpperCase() },
+    },
+  });
+
+  let measuredY = headerEndY;
+  measuredY = generateSectionContent(measureDoc, activeSection, measuredY, PW, MEASURE_H, ML, MR);
+
+  // Footer note height
+  measureDoc.setFont("helvetica", "italic");
+  measureDoc.setFontSize(8);
+  const footerNote =
+    "Untuk informasi lebih lengkap, silakan akses manual book interaktif di https://synthera.id/manual " +
+    "atau hubungi support@synthera.id untuk bantuan teknis.";
+  const splitFooterNote = measureDoc.splitTextToSize(footerNote, PW - ML - MR);
+  measuredY += splitFooterNote.length * 4 + 5;
+
+  // Add footer height (35mm) + bottom padding
+  const FOOTER_HEIGHT = 35;
+  const BOTTOM_PAD = 10;
+  const totalHeight = measuredY + FOOTER_HEIGHT + BOTTOM_PAD;
+
+  // ── PASS 2: Render final PDF with correct height ──
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: [PW, totalHeight],
+  });
+
   const currentY = drawPremiumHeader(doc, {
     title: sectionMeta.title,
     documentNumber: docNumber,
@@ -570,25 +614,21 @@ export async function generateManualBookPDF(activeSection = "pendahuluan") {
 
   let y = currentY;
 
-  // Generate content sesuai section
-  y = generateSectionContent(doc, activeSection, y, PW, PH, ML, MR);
+  // Generate content
+  y = generateSectionContent(doc, activeSection, y, PW, totalHeight, ML, MR);
 
   // Footer note
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
   doc.setTextColor(...PDF_COLORS.grayLight);
-  const footerNote = 
-    "Untuk informasi lebih lengkap, silakan akses manual book interaktif di https://synthera.id/manual " +
-    "atau hubungi support@synthera.id untuk bantuan teknis.";
-  const splitFooterNote = doc.splitTextToSize(footerNote, PW - ML - MR);
   doc.text(splitFooterNote, ML, y);
   y += splitFooterNote.length * 4 + 5;
 
-  // Footer
+  // Footer — always placed right after content
   drawPremiumFooter(doc, {
     logoBase64,
     pageWidth: PW,
-    pageHeight: PH,
+    pageHeight: totalHeight,
     marginLeft: ML,
     marginRight: MR,
     currentY: y,

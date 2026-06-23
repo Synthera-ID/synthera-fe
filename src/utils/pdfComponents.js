@@ -261,7 +261,8 @@ export function drawPremiumFooter(doc, options = {}) {
   
   const RIGHT = pageWidth - marginRight;
   const footerHeight = 35;
-  const footerY = Math.max(currentY, pageHeight - footerHeight - 5);
+  // Always place footer directly after content (not forced to page bottom)
+  const footerY = currentY;
   
   // Solid navy background
   doc.setFillColor(...PDF_COLORS.navyDarkest);
