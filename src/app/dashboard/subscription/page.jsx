@@ -40,33 +40,118 @@ const TIER_STYLES = {
 // Keyed by normalized label (lowercase, trimmed). Used to enrich API feature items.
 const FEATURE_DETAILS = {
   // Basic
-  "access to free courses": "Browse 50+ curated free courses",
-  "learning progress tracking": "Visual progress bar per course",
-  "progress tracking": "Visual progress bar per course",
-  "personal dashboard": "Track activity, goals & streaks",
-  "learning dashboard": "Track activity, goals & streaks",
-  "community access": "Join learner discussion forums",
-  "basic support": "Email support within 3 business days",
+  "akses kursus gratis": "Jelajahi kursus gratis yang siap dipelajari",
+  "access to free courses": "Jelajahi kursus gratis yang siap dipelajari",
+  "learning progress tracking": "Pantau progres belajar Anda dengan jelas",
+  "progress tracking": "Pantau progres belajar Anda dengan jelas",
+  "pelacakan progres belajar": "Pantau progres belajar Anda dengan jelas",
+  "personal dashboard": "Lihat aktivitas, target, dan riwayat belajar Anda",
+  "learning dashboard": "Lihat aktivitas, target, dan riwayat belajar Anda",
+  "dashboard member": "Lihat aktivitas, target, dan riwayat belajar Anda",
+  "community access": "Bergabung dengan komunitas diskusi pembelajar",
+  "akses komunitas": "Bergabung dengan komunitas diskusi pembelajar",
+  "basic support": "Dapatkan bantuan via email dalam 3 hari kerja",
+  "dukungan dasar": "Dapatkan bantuan via email dalam 3 hari kerja",
   // Pro
-  "unlimited course access": "Full access to 500+ premium courses",
-  "ai learning assistant": "Personalized AI-powered study guide",
-  "download certificates": "Share verified certs on LinkedIn",
-  "advanced analytics": "Deep insights on your learning path",
-  "advanced progress analytics": "Deep insights on your learning path",
-  "priority support": "Response guaranteed within 24 hours",
-  "premium learning materials": "Exclusive PDFs, templates & toolkits",
-  "premium learning resources": "Exclusive PDFs, templates & toolkits",
-  "course completion insights": "Detailed stats upon completing courses",
+  "unlimited course access": "Akses penuh ke katalog kursus premium",
+  "akses kursus tak terbatas": "Akses penuh ke katalog kursus premium",
+  "ai learning assistant": "Dapatkan rekomendasi belajar yang dipersonalisasi lewat AI",
+  "asisten belajar ai": "Dapatkan rekomendasi belajar yang dipersonalisasi lewat AI",
+  "download certificates": "Unduh sertifikat resmi yang bisa dibagikan",
+  "unduh sertifikat": "Unduh sertifikat resmi yang bisa dibagikan",
+  "advanced analytics": "Lihat insight mendalam tentang perjalanan belajar Anda",
+  "advanced progress analytics": "Lihat insight mendalam tentang perjalanan belajar Anda",
+  "analitik lanjutan": "Lihat insight mendalam tentang perjalanan belajar Anda",
+  "priority support": "Dapatkan respon cepat dari tim support dalam 24 jam",
+  "support prioritas": "Dapatkan respon cepat dari tim support dalam 24 jam",
+  "premium learning materials": "Akses modul, template, dan toolkit eksklusif",
+  "premium learning resources": "Akses modul, template, dan toolkit eksklusif",
+  "materi belajar premium": "Akses modul, template, dan toolkit eksklusif",
+  "course completion insights": "Lihat statistik detail saat menyelesaikan kursus",
+  "insight penyelesaian kursus": "Lihat statistik detail saat menyelesaikan kursus",
   // Exclusive
-  "everything in pro": "Includes all Pro plan features",
-  "1-on-1 mentoring sessions": "4 sessions/month with expert mentors",
-  "exclusive masterclass access": "Live & recorded premium masterclasses",
-  "early access to new courses": "Get new courses before anyone else",
-  "dedicated support": "Personal support manager, 24/7",
-  "premium community access": "VIP network with top instructors",
-  "vip learning resources": "High-end developer resources & tools",
-  "personalized learning roadmap": "Tailored curriculum matching your goals",
+  "everything in pro": "Termasuk semua fitur paket Pro",
+  "semua fitur pro": "Termasuk semua fitur paket Pro",
+  "1-on-1 mentoring sessions": "Dapatkan 4 sesi mentoring bulanan dari mentor ahli",
+  "mentoring 1 on 1": "Dapatkan 4 sesi mentoring bulanan dari mentor ahli",
+  "exclusive masterclass access": "Masuk ke masterclass live dan rekaman premium",
+  "akses masterclass eksklusif": "Masuk ke masterclass live dan rekaman premium",
+  "early access to new courses": "Dapatkan akses lebih dulu ke konten baru",
+  "akses awal kursus baru": "Dapatkan akses lebih dulu ke konten baru",
+  "dedicated support": "Dapatkan bantuan personal dari tim support 24/7",
+  "dukungan khusus": "Dapatkan bantuan personal dari tim support 24/7",
+  "premium community access": "Nikmati jaringan VIP bersama mentor dan creator top",
+  "akses komunitas vip": "Nikmati jaringan VIP bersama mentor dan creator top",
+  "vip learning resources": "Akses sumber belajar premium dan alat produksi terbaik",
+  "sumber belajar vip": "Akses sumber belajar premium dan alat produksi terbaik",
+  "personalized learning roadmap": "Dapatkan roadmap belajar yang disesuaikan dengan target Anda",
+  "roadmap belajar personal": "Dapatkan roadmap belajar yang disesuaikan dengan target Anda",
 };
+
+const PLAN_BENEFITS = {
+  basic: [
+    { label: "Akses Kursus Gratis", description: "Mulai belajar dari materi dasar dengan paket starter." },
+    { label: "Pantau Progres Belajar", description: "Lihat perkembangan belajar dari dashboard pribadi." },
+    { label: "Dukungan Dasar", description: "Dapatkan bantuan melalui email untuk kebutuhan awal." },
+  ],
+  pro: [
+    { label: "Akses Kursus Premium", description: "Jelajahi konten premium yang lebih lengkap dan mendalam." },
+    { label: "Asisten Belajar AI", description: "Dapatkan rekomendasi belajar yang dipersonalisasi lewat AI." },
+    { label: "Analitik Belajar", description: "Pantau pencapaian dan progres dengan insight detail." },
+    { label: "Materi Eksklusif", description: "Dapatkan template, modul, dan toolkit khusus." },
+  ],
+  exclusive: [
+    { label: "Semua Fitur Pro", description: "Termasuk semua manfaat paket Pro plus akses eksklusif." },
+    { label: "Mentoring 1-on-1", description: "Dapatkan sesi mentoring bulanan dari mentor ahli." },
+    { label: "Masterclass Premium", description: "Masuk ke masterclass live dan rekaman eksklusif." },
+    { label: "Support Prioritas", description: "Nikmati bantuan personal dan respons yang lebih cepat." },
+  ],
+};
+
+const normalizeFeatureLabel = (label = "") =>
+  label.toLowerCase().trim().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ");
+
+const normalizeTierKey = (tier) => {
+  const normalized = String(tier || "basic").toLowerCase().trim();
+  if (normalized.includes("pro")) return "pro";
+  if (normalized.includes("exclusive") || normalized.includes("vip") || normalized.includes("premium")) return "exclusive";
+  return "basic";
+};
+
+function getFeatureSubtext(label, tier) {
+  const normalized = normalizeFeatureLabel(label);
+  if (FEATURE_DETAILS[normalized]) return FEATURE_DETAILS[normalized];
+
+  if (/kursus|course|materi|content|modul/i.test(label)) {
+    return tier === "exclusive"
+      ? "Akses konten premium dan modul eksklusif"
+      : tier === "pro"
+        ? "Akses konten belajar premium yang lebih lengkap"
+        : "Akses materi dasar untuk mulai belajar";
+  }
+
+  if (/progress|tracking|dashboard|report|analytics|insight/i.test(label)) {
+    return "Pantau perkembangan belajar dan performa Anda dengan lebih jelas";
+  }
+
+  if (/support|dukungan/i.test(label)) {
+    return "Dapatkan bantuan sesuai level paket yang Anda pilih";
+  }
+
+  if (/ai|assistant/i.test(label)) {
+    return "Gunakan bantuan AI untuk rekomendasi belajar yang lebih personal";
+  }
+
+  if (/sertifikat|certificate/i.test(label)) {
+    return "Dapatkan bukti pencapaian yang bisa dibagikan";
+  }
+
+  if (/mentor|masterclass|community|vip/i.test(label)) {
+    return "Nikmati akses eksklusif ke sesi, komunitas, dan jaringan premium";
+  }
+
+  return null;
+}
 
 const PAYMENT_METHODS = [
   { id: "qris", code: "SP", label: "QRIS", icon: QrCode, desc: "Scan & bayar via e-wallet / m-banking" },
@@ -549,6 +634,40 @@ function FeatureItem({ text, subtext, detail, tier }) {
   );
 }
 
+function getVisiblePlanFeatures(plan) {
+  const tierKey = normalizeTierKey(plan?.tier);
+  const planFeatures = plan?.features;
+  const rawFeatures = Array.isArray(planFeatures) && planFeatures.length > 0
+    ? planFeatures
+    : Array.isArray(planFeatures?.data) && planFeatures.data.length > 0
+      ? planFeatures.data
+      : PLAN_BENEFITS[tierKey] || [];
+
+  if (rawFeatures.length === 0) {
+    return PLAN_BENEFITS[tierKey].map((feature, index) => ({
+      id: `${plan?.id || index}-${index}`,
+      label: feature.label,
+      description: feature.description,
+      unlimited: false,
+      limit_value: null,
+    }));
+  }
+
+  return rawFeatures.map((feature, index) => {
+    if (typeof feature === "string") {
+      return { id: `${plan?.id || index}-${index}`, label: feature, description: null, unlimited: false, limit_value: null };
+    }
+
+    return {
+      id: feature?.id || `${plan?.id || index}-${index}`,
+      label: feature?.label || feature?.feature_label || feature?.name || feature?.title || "Benefit paket",
+      description: feature?.description || feature?.detail || feature?.subtext || feature?.subtitle || null,
+      unlimited: Boolean(feature?.unlimited),
+      limit_value: feature?.limit_value ?? feature?.limit ?? feature?.max_limit ?? null,
+    };
+  });
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -735,9 +854,8 @@ export default function SubscriptionPage() {
                     </h5>
 
                     <div className="space-y-1.5 flex-1">
-                      {plan.features.map((feature) => {
-                        const normalizedLabel = feature.label?.toLowerCase().trim();
-                        const subtext = FEATURE_DETAILS[normalizedLabel] ?? null;
+                      {getVisiblePlanFeatures(plan).map((feature) => {
+                        const subtext = feature.description || getFeatureSubtext(feature.label, plan.tier);
                         const detail = feature.unlimited
                           ? "Unlimited"
                           : feature.limit_value
