@@ -25,6 +25,31 @@ export default function TemplatesDashboard({ children }) {
     }
   }, [pathname, userRole, router]);
 
+  // ── Mobile scroll lock effect ──────────────
+  useEffect(() => {
+    const checkMediaQuery = () => window.innerWidth < 1024;
+    
+    if (isSidebarOpen && checkMediaQuery()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    
+    const handleResize = () => {
+      if (checkMediaQuery() && isSidebarOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.body.style.overflow = "";
+    };
+  }, [isSidebarOpen]);
+
   // Don't render admin-only content for MEMBER while redirecting
   if (userRole !== "ADMIN") {
     const isAllowed = MEMBER_ALLOWED_ROUTES.some(
@@ -34,11 +59,11 @@ export default function TemplatesDashboard({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
+    <div className="flex h-screen overflow-hidden bg-bg-1 text-text-1 font-sans selection:bg-primary-1/30">
       <DashboardSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} userRole={userRole} />
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         <DashboardNavbar onToggleSidebar={() => setIsSidebarOpen((v) => !v)} UserData={user} logout={logout} />
 
         <main className="flex-1 p-8 lg:p-12 overflow-y-auto w-full scroll-smooth">{children}</main>

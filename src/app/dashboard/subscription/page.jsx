@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, Loader2, X, QrCode, ShieldCheck, RefreshCw, CreditCard, Copy, Building2, CheckCheck } from "lucide-react";
+import { Check, Loader2, X, QrCode, ShieldCheck, RefreshCw, CreditCard, Copy, Building2, CheckCheck, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import apiFetch from "@/utils/apiFetch";
 import { formatPrice, formatRupiah, formatDate } from "@/utils/format";
@@ -11,24 +11,65 @@ const TIER_ORDER = { basic: 0, pro: 1, exclusive: 2 };
 
 const TIER_STYLES = {
   basic: {
-    ribbon: null,
-    card: "bg-bg-2 border border-bg-3",
-    priceColor: "",
+    badge: null,
+    wrapperClass: "group relative flex flex-col rounded-[20px] border border-bg-3 bg-bg-2 p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-bg-4 h-full",
+    glowClass: "",
+    priceColor: "text-text-1",
+    btnClass: "w-full py-3 rounded-xl border border-bg-3 text-[13px] font-semibold text-text-2 hover:bg-bg-3/40 transition-all duration-200 cursor-default",
+    badgeColor: "",
   },
   pro: {
-    ribbon: "POPULAR",
-    card: "bg-primary-1/5 border border-primary-1 shadow-[0_0_20px_rgba(139,92,246,0.1)]",
-    priceColor: "text-primary-3",
+    badge: "MOST POPULAR",
+    wrapperClass: "group relative flex flex-col rounded-[20px] border border-primary-1/50 bg-gradient-to-b from-primary-1/10 to-bg-2 p-8 shadow-[0_0_40px_rgba(139,92,246,0.12)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(139,92,246,0.3)] hover:border-primary-1 scale-[1.03] z-10 h-full",
+    glowClass: "absolute inset-0 rounded-[20px] bg-gradient-to-b from-primary-1/5 to-transparent pointer-events-none",
+    priceColor: "text-primary-1 dark:text-primary-3",
+    btnClass: "w-full py-3 rounded-xl bg-primary-1 text-white text-[13px] font-bold shadow-lg shadow-primary-1/30 hover:bg-primary-2 hover:shadow-primary-1/50 active:scale-[0.98] transition-all duration-200",
+    badgeColor: "bg-primary-1/10 dark:bg-primary-1/20 text-primary-1 dark:text-primary-3 border border-primary-1/25 dark:border-primary-1/40",
   },
   exclusive: {
-    ribbon: "BEST VALUE",
-    card: "bg-amber-500/5 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.08)]",
-    priceColor: "text-amber-400",
+    badge: "BEST VALUE",
+    wrapperClass: "group relative flex flex-col rounded-[20px] border border-amber-500/30 bg-gradient-to-b from-amber-500/8 to-bg-2 p-8 shadow-[0_0_30px_rgba(245,158,11,0.06)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_60px_rgba(245,158,11,0.2)] hover:border-amber-500/60 dark:hover:border-amber-400/70 h-full",
+    glowClass: "absolute inset-0 rounded-[20px] bg-gradient-to-b from-amber-500/5 to-transparent pointer-events-none",
+    priceColor: "text-amber-600 dark:text-amber-400",
+    btnClass: "w-full py-3 rounded-xl border border-amber-500/50 text-amber-600 dark:text-amber-400 text-[13px] font-bold hover:bg-amber-500/10 hover:border-amber-500 active:scale-[0.98] transition-all duration-200",
+    badgeColor: "bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/40",
   },
 };
 
+// ─── Static Feature Descriptions ────────────────────────────────────────────
+// Keyed by normalized label (lowercase, trimmed). Used to enrich API feature items.
+const FEATURE_DETAILS = {
+  // Basic
+  "access to free courses": "Browse 50+ curated free courses",
+  "learning progress tracking": "Visual progress bar per course",
+  "progress tracking": "Visual progress bar per course",
+  "personal dashboard": "Track activity, goals & streaks",
+  "learning dashboard": "Track activity, goals & streaks",
+  "community access": "Join learner discussion forums",
+  "basic support": "Email support within 3 business days",
+  // Pro
+  "unlimited course access": "Full access to 500+ premium courses",
+  "ai learning assistant": "Personalized AI-powered study guide",
+  "download certificates": "Share verified certs on LinkedIn",
+  "advanced analytics": "Deep insights on your learning path",
+  "advanced progress analytics": "Deep insights on your learning path",
+  "priority support": "Response guaranteed within 24 hours",
+  "premium learning materials": "Exclusive PDFs, templates & toolkits",
+  "premium learning resources": "Exclusive PDFs, templates & toolkits",
+  "course completion insights": "Detailed stats upon completing courses",
+  // Exclusive
+  "everything in pro": "Includes all Pro plan features",
+  "1-on-1 mentoring sessions": "4 sessions/month with expert mentors",
+  "exclusive masterclass access": "Live & recorded premium masterclasses",
+  "early access to new courses": "Get new courses before anyone else",
+  "dedicated support": "Personal support manager, 24/7",
+  "premium community access": "VIP network with top instructors",
+  "vip learning resources": "High-end developer resources & tools",
+  "personalized learning roadmap": "Tailored curriculum matching your goals",
+};
+
 const PAYMENT_METHODS = [
-  { id: "qris",         code: "SP",         label: "QRIS",         icon: QrCode,     desc: "Scan & bayar via e-wallet / m-banking" },
+  { id: "qris", code: "SP", label: "QRIS", icon: QrCode, desc: "Scan & bayar via e-wallet / m-banking" },
   { id: "bank_transfer", code: "BC", label: "Bank Transfer", icon: CreditCard, desc: "Transfer langsung ke rekening bank (VA)" },
 ];
 
@@ -121,11 +162,10 @@ function ConfirmModal({ plan, onConfirm, onClose }) {
                   key={m.id}
                   onClick={() => setMethod(m.id)}
                   disabled={submitting}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 text-left ${
-                    method === m.id
-                      ? "border-primary-1 bg-primary-1/10"
-                      : "border-bg-3 hover:border-bg-3/80 hover:bg-bg-1"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 text-left ${method === m.id
+                    ? "border-primary-1 bg-primary-1/10"
+                    : "border-bg-3 hover:border-bg-3/80 hover:bg-bg-1"
+                    }`}
                 >
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${method === m.id ? "bg-primary-1/20 text-primary-3" : "bg-bg-3 text-text-3"}`}
@@ -240,11 +280,10 @@ function VANumberDisplay({ vaNumber }) {
         {/* Copy button */}
         <button
           onClick={handleCopy}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.98] ${
-            copied
-              ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-              : "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
-          }`}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.98] ${copied
+            ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+            : "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
+            }`}
         >
           {copied ? (
             <>
@@ -270,7 +309,7 @@ function PaymentModal({ plan, transactionData, onClose }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const isQris = transactionData.payment_method === "qris";
-  const isVA   = transactionData.payment_method === "bank_transfer";
+  const isVA = transactionData.payment_method === "bank_transfer";
 
   // Countdown timer
   useEffect(() => {
@@ -316,7 +355,7 @@ function PaymentModal({ plan, transactionData, onClose }) {
   const statusConfig = {
     pending: { label: "Menunggu Pembayaran", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
     success: { label: "Pembayaran Berhasil", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-    failed:  { label: "Pembayaran Gagal",   color: "text-red-400 bg-red-500/10 border-red-500/20" },
+    failed: { label: "Pembayaran Gagal", color: "text-red-400 bg-red-500/10 border-red-500/20" },
   };
   const currentStatus = statusConfig[status] || statusConfig.pending;
 
@@ -485,15 +524,26 @@ function PaymentModal({ plan, transactionData, onClose }) {
 import SubscriptionHistory from "@/components/organisms/SubscriptionHistory";
 
 // ─── Feature Item ─────────────────────────────────────────────────────────────
-function FeatureItem({ text, detail, isLast }) {
+function FeatureItem({ text, subtext, detail, tier }) {
+  const checkColor =
+    tier === "exclusive"
+      ? "text-amber-500"
+      : tier === "pro"
+        ? "text-primary-1 dark:text-primary-3"
+        : "text-emerald-500";
   return (
-    <div className={`flex items-start gap-3 pb-3.5 mt-4 ${!isLast ? "border-b border-bg-3/60" : ""}`}>
-      <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center mt-0.5 flex-shrink-0">
-        <Check size={12} className="text-emerald-400" strokeWidth={3} />
+    <div className="group/benefit flex items-start gap-3 py-2.5 px-2 rounded-xl hover:bg-bg-3/20 transition-all duration-300 hover:translate-x-1">
+      <div className={`flex-shrink-0 mt-0.5 ${checkColor} transition-transform duration-300 group-hover/benefit:scale-110`}>
+        <CheckCircle2 size={16} strokeWidth={2.5} />
       </div>
-      <div className="flex flex-col flex-1">
-        <span className="text-text-2 text-[13px] font-medium">{text}</span>
-        {detail && <span className="text-text-3 text-[11px] mt-0.5">{detail}</span>}
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="text-text-2 text-[13px] font-semibold leading-snug group-hover/benefit:text-text-1 transition-colors duration-200">{text}</span>
+        {subtext && <span className="text-text-3 text-[11.5px] mt-0.5 leading-relaxed group-hover/benefit:text-text-2 transition-colors duration-200">{subtext}</span>}
+        {detail && (
+          <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-bg-3/60 text-text-3 w-fit">
+            {detail}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -589,14 +639,22 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Compare Plans */}
-      <div className="mb-6">
-        <h3 className="text-[17px] font-bold mb-8">Compare Plans</h3>
+      <div className="mb-10">
+        {/* Section Header */}
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary-1/30 bg-primary-1/10 mb-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary-1 dark:bg-primary-3 animate-pulse" />
+            <span className="text-[11px] font-semibold text-primary-1 dark:text-primary-3 tracking-widest uppercase">Subscription Plans</span>
+          </div>
+          <h3 className="text-[28px] font-bold tracking-tight text-text-1 mb-2">Choose Your Plan</h3>
+          <p className="text-text-3 text-[13px] max-w-md mx-auto">Unlock the full Synthera experience. Upgrade anytime, cancel anytime.</p>
+        </div>
 
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={28} className="animate-spin text-primary-3" />
-            <span className="ml-3 text-text-3 text-[13px]">Memuat paket...</span>
+            <Loader2 size={28} className="animate-spin text-primary-1 dark:text-primary-3" />
+            <span className="ml-3 text-text-3 text-[13px]">Loading plans...</span>
           </div>
         )}
 
@@ -608,14 +666,14 @@ export default function SubscriptionPage() {
               onClick={() => window.location.reload()}
               className="px-5 py-2.5 rounded-lg border border-bg-3 text-text-1 text-[13px] font-medium hover:bg-bg-3 transition-colors"
             >
-              Coba Lagi
+              Retry
             </button>
           </div>
         )}
 
         {/* Plans Grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {plans.map((plan) => {
               const isCurrent = plan.id === currentSubId;
               const style = TIER_STYLES[plan.tier] || TIER_STYLES.basic;
@@ -624,73 +682,100 @@ export default function SubscriptionPage() {
               const isUpgrade = planTierOrder > currentTierOrder;
 
               // Determine button label
-              let buttonLabel = "Upgrade";
+              let buttonLabel = plan.tier === "pro" ? "Upgrade to Pro" : plan.tier === "exclusive" ? "Upgrade to Exclusive" : "Current Plan";
               if (isCurrent) buttonLabel = "Current Plan";
               else if (!isUpgrade) buttonLabel = "Downgrade";
 
               return (
-                <div key={plan.id} className={`relative overflow-hidden rounded-2xl p-8 flex flex-col ${style.card}`}>
-                  {/* Ribbon */}
-                  {style.ribbon && (
-                    <div
-                      className={`absolute right-[-40px] top-[24px] w-[150px] rotate-45 text-center py-1.5 text-[9px] font-bold text-white tracking-widest shadow-md ${
-                        plan.tier === "exclusive" ? "bg-amber-500" : "bg-primary-1"
-                      }`}
-                    >
-                      {style.ribbon}
+                <div key={plan.id} className={style.wrapperClass}>
+                  {/* Glow overlay */}
+                  {style.glowClass && <div className={style.glowClass} />}
+
+                  {/* Badge */}
+                  {style.badge && (
+                    <div className="mb-5">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase ${style.badgeColor}`}>
+                        <div className="w-1 h-1 rounded-full bg-current" />
+                        {style.badge}
+                      </span>
                     </div>
                   )}
+                  {!style.badge && <div className="mb-5 h-[26px]" />}
 
-                  {/* Plan Name */}
-                  <h4 className="text-[17px] font-bold text-center mb-2 capitalize">{plan.tier}</h4>
-                  <p className="text-text-3 text-[11px] text-center mb-8 leading-relaxed">{plan.description}</p>
+                  {/* Plan Name & Description */}
+                  <div className="mb-6">
+                    <h4 className="text-[20px] font-bold capitalize text-text-1 mb-1.5 tracking-tight">{plan.name || plan.tier}</h4>
+                    <p className="text-text-3 text-[12px] leading-relaxed">{plan.description}</p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className={`w-full h-px mb-6 ${plan.tier === "pro" ? "bg-gradient-to-r from-transparent via-primary-1/40 to-transparent" :
+                    plan.tier === "exclusive" ? "bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" :
+                      "bg-bg-3/60"
+                    }`} />
 
                   {/* Price */}
-                  <div className="mb-8 text-center">
-                    <div className="flex items-end justify-center gap-1">
-                      <span className="text-[13px] text-text-3 mb-1.5 mr-0.5">Rp</span>
-                      <span className={`text-[40px] leading-none font-bold ${style.priceColor}`}>
+                  <div className="mb-6">
+                    <div className="flex items-end gap-1">
+                      <span className="text-[14px] text-text-3 mb-1.5 font-medium">Rp</span>
+                      <span className={`text-[46px] leading-none font-black tracking-tight ${style.priceColor}`}>
                         {formatPrice(plan.price)}
                       </span>
-                      <span className="text-text-3 text-[14px] mb-1">/mo</span>
+                      <span className="text-text-3/70 text-[12px] mb-1.5 ml-0.5">/month</span>
                     </div>
                   </div>
 
-                  {/* Features */}
-                  <div className="mb-8 flex-1 space-y-0">
-                    {plan.features.map((feature, idx) => (
-                      <FeatureItem
-                        key={feature.id}
-                        text={feature.label}
-                        detail={
-                          feature.unlimited
-                            ? "Unlimited"
-                            : feature.limit_value
-                              ? `Limit: ${feature.limit_value.toLocaleString("id-ID")}`
-                              : null
-                        }
-                        isLast={idx === plan.features.length - 1}
-                      />
-                    ))}
+                  {/* Divider 2: Pricing to Benefits */}
+                  <div className="w-full h-px bg-bg-3/60 mb-6" />
+
+                  {/* Benefits Included section */}
+                  <div className="flex-1 flex flex-col mb-6">
+                    <h5 className="text-[11px] font-bold uppercase tracking-wider text-text-3 mb-4">
+                      Benefits Included:
+                    </h5>
+
+                    <div className="space-y-1.5 flex-1">
+                      {plan.features.map((feature) => {
+                        const normalizedLabel = feature.label?.toLowerCase().trim();
+                        const subtext = FEATURE_DETAILS[normalizedLabel] ?? null;
+                        const detail = feature.unlimited
+                          ? "Unlimited"
+                          : feature.limit_value
+                            ? `Up to ${feature.limit_value.toLocaleString("id-ID")}`
+                            : null;
+                        return (
+                          <FeatureItem
+                            key={feature.id}
+                            text={feature.label}
+                            subtext={subtext}
+                            detail={detail}
+                            tier={plan.tier}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
+
+                  {/* Divider 3: Benefits to Action Button */}
+                  <div className="w-full h-px bg-bg-3/60 mb-6" />
 
                   {/* Action Button */}
                   {isCurrent ? (
                     <button
                       disabled
-                      className="w-full py-[10px] px-5 rounded-lg bg-primary-1 text-white text-[13px] font-medium text-center shadow-lg shadow-primary-1/20 cursor-default opacity-90"
+                      className="w-full py-3 rounded-xl bg-bg-3/20 border border-bg-3 text-text-3 text-[13px] font-semibold cursor-default"
                     >
-                      Current Plan
+                      ✓ Current Plan
                     </button>
                   ) : isUpgrade ? (
                     <button
                       onClick={() => handleUpgradeClick(plan)}
-                      className="w-full py-[10px] px-5 rounded-lg text-[13px] font-semibold text-center transition-all duration-200 border border-primary-1/40 text-primary-3 hover:bg-primary-1/10 active:scale-[0.98]"
+                      className={style.btnClass}
                     >
                       {buttonLabel}
                     </button>
                   ) : (
-                    <button className="w-full py-[10px] px-5 rounded-lg text-[13px] font-medium text-center border border-bg-3 text-text-3 hover:bg-bg-3 transition-colors">
+                    <button className="w-full py-3 rounded-xl border border-bg-3 text-text-3 text-[13px] font-medium hover:bg-bg-3/50 transition-colors">
                       {buttonLabel}
                     </button>
                   )}
